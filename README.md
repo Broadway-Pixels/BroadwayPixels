@@ -20,7 +20,8 @@ Then open `http://localhost:8080`.
 - `assets/broadway-pixels-logo.webp`: current Broadway Pixels logo from the live Squarespace site
 - `assets/artist-hero.webp` and `assets/artist-portrait.webp`: current artist photography from the live site
 - `assets/anything-cover.jpg`: Spotify artwork for the latest release, Anything
-- `assets/toontown-video.jpg`: current YouTube thumbnail from the Content page
+- `assets/youtube-*.jpg`: current Broadway Pixels YouTube thumbnails
+- `assets/vidioza-dancing-fruit.jpg`: Vidioza product media used on Home and Projects
 - `assets/app-worlds.jpg`: optimized app-development artwork
 - `assets/app-worlds.png`: original generated Broadway Pixels illustration
 

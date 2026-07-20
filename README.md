@@ -15,10 +15,12 @@ Then open `http://localhost:8080`.
 - `index.html`: music, content, apps, and artist story
 - `music.html`: year-grouped releases with direct Spotify and verified SoundCloud links
 - `projects.html`: filterable music, content, and app portfolio
+- `contact.html`: collaboration, partnership, press, and business inquiry form
 - `support.html`: support form for apps, music, content, and website questions
 - `styles.css`: complete responsive design system
 - `script.js`: mobile navigation, scroll reveals, project filters, and current year
 - `support.js`: support form submission and UI states
+- `contact.js`: contact form submission and UI states
 - `server.mjs`: dependency-free static server and Resend support endpoint for a droplet
 - `api/support.js`: serverless support endpoint for Vercel-compatible hosting
 - `assets/broadway-pixels-logo.webp`: current Broadway Pixels logo from the live Squarespace site

@@ -17,7 +17,7 @@ const mimeTypes = {
   ".png": "image/png",
   ".webp": "image/webp",
 };
-const publicFiles = new Set(["/index.html", "/music.html", "/projects.html", "/support.html", "/styles.css", "/script.js", "/support.js"]);
+const publicFiles = new Set(["/index.html", "/music.html", "/projects.html", "/contact.html", "/support.html", "/styles.css", "/script.js", "/contact.js", "/support.js"]);
 
 function json(response, status, body) {
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" });

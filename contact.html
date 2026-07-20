@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1557d6" />
+    <meta name="description" content="Contact Broadway Pixels about music collaborations, content partnerships, app ideas, press, and business inquiries." />
+    <meta property="og:title" content="Contact | Broadway Pixels" />
+    <meta property="og:description" content="Start a music, content, or app conversation with Broadway Pixels." />
+    <meta property="og:image" content="assets/artist-portrait.webp" />
+    <title>Contact | Broadway Pixels</title>
+    <link rel="preload" as="image" href="assets/artist-portrait.webp" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+    <script src="contact.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header">
+      <a class="brand brand-image" href="index.html" aria-label="Broadway Pixels home"><img src="assets/broadway-pixels-logo.webp" alt="Broadway Pixels" width="1500" height="711" /></a>
+      <button class="menu-button" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+      <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+        <a href="index.html">Home</a>
+        <a href="music.html">Music</a>
+        <a href="index.html#content">Content</a>
+        <a href="projects.html">Projects</a>
+        <a href="index.html#about">About</a>
+        <a class="active" href="contact.html">Contact</a>
+        <a href="support.html">Support</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="support-hero contact-hero">
+        <div class="support-hero-copy reveal">
+          <p class="hero-kicker">Contact Broadway Pixels</p>
+          <h1>Let’s create together.</h1>
+          <p>Bring a song, story, collaboration, or product idea. Start the conversation here.</p>
+        </div>
+        <figure class="support-hero-art contact-hero-art reveal">
+          <img src="assets/artist-portrait.webp" alt="Broadway Pixels at the beach during sunset" width="1536" height="2048" />
+        </figure>
+      </section>
+
+      <section class="support-layout contact-layout" aria-labelledby="contact-form-title">
+        <div class="support-form-wrap reveal">
+          <div class="support-form-heading">
+            <h2 id="contact-form-title">Start a conversation</h2>
+            <p>Share enough detail to understand the idea and the best way to follow up.</p>
+          </div>
+          <form id="contact-form" class="support-form" action="mailto:Media@BroadwayPixels.com" method="post" enctype="text/plain">
+            <div class="form-grid">
+              <div class="form-field">
+                <label for="contact-name">Your name</label>
+                <input id="contact-name" name="name" type="text" autocomplete="name" minlength="2" maxlength="80" required />
+              </div>
+              <div class="form-field">
+                <label for="contact-email">Email address</label>
+                <input id="contact-email" name="email" type="email" autocomplete="email" maxlength="254" aria-describedby="contact-email-help" required />
+                <small id="contact-email-help">This address is only used to reply to your inquiry.</small>
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="contact-topic">What would you like to discuss?</label>
+              <select id="contact-topic" name="topic" required>
+                <option value="">Choose one</option>
+                <option>Music collaboration</option>
+                <option>Content partnership</option>
+                <option>App or product idea</option>
+                <option>Press or media</option>
+                <option>General inquiry</option>
+              </select>
+            </div>
+            <div class="form-field">
+              <label for="contact-message">Tell us about it</label>
+              <textarea id="contact-message" name="message" rows="7" minlength="20" maxlength="5000" aria-describedby="contact-message-help" required></textarea>
+              <small id="contact-message-help">A useful note includes the idea, your role, and what you would like to happen next.</small>
+            </div>
+            <div class="form-field">
+              <label for="contact-link">Helpful link <span>(optional)</span></label>
+              <input id="contact-link" name="link" type="url" inputmode="url" maxlength="500" placeholder="https://" />
+            </div>
+            <div class="honeypot" aria-hidden="true">
+              <label for="contact-company">Company website</label>
+              <input id="contact-company" name="company" type="text" tabindex="-1" autocomplete="off" />
+            </div>
+            <input name="project" type="hidden" value="General question" />
+            <input id="contact-request-id" name="requestId" type="hidden" />
+            <div class="support-submit-row">
+              <button class="button button-primary" type="submit">Send inquiry</button>
+              <p>Or email <a href="mailto:Media@BroadwayPixels.com">Media@BroadwayPixels.com</a>.</p>
+            </div>
+            <p id="contact-status" class="form-status" role="status" aria-live="polite"></p>
+          </form>
+          <noscript><p class="form-status form-status-error">JavaScript is needed for the web form. Email <a href="mailto:Media@BroadwayPixels.com">Media@BroadwayPixels.com</a> instead.</p></noscript>
+        </div>
+
+        <aside class="support-aside contact-aside reveal" aria-labelledby="contact-fit-title">
+          <h2 id="contact-fit-title">Good reasons to reach out:</h2>
+          <div class="support-note">
+            <strong>Music</strong>
+            <p>Production, remixes, songwriting, releases, and artist collaborations.</p>
+          </div>
+          <div class="support-note">
+            <strong>Content</strong>
+            <p>YouTube, social campaigns, creator partnerships, and original stories.</p>
+          </div>
+          <div class="support-note">
+            <strong>Products</strong>
+            <p>App ideas, prototypes, creative tools, and playful consumer experiences.</p>
+          </div>
+          <div class="support-email-block">
+            <p>Having trouble with a project?</p>
+            <a href="support.html">Go to Support</a>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <a class="brand brand-image" href="index.html"><img src="assets/broadway-pixels-logo.webp" alt="Broadway Pixels" width="1500" height="711" loading="lazy" /></a>
+      <p>Music, content, and apps from one independent studio.</p>
+      <div><a href="https://www.instagram.com/BroadwayPixels" target="_blank" rel="noreferrer">Instagram</a><a href="https://www.youtube.com/@BroadwayPixels" target="_blank" rel="noreferrer">YouTube</a><a href="contact.html">Contact</a><a href="support.html">Support</a></div>
+      <p class="copyright">© <span data-year></span> Broadway Pixels</p>
+    </footer>
+  </body>
+</html>

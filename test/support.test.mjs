@@ -18,6 +18,7 @@ test("validates a complete project support request", () => {
   assert.equal(result.ok, true);
   assert.equal(result.submission.email, "river@example.com");
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "KixKan" }).ok, true);
+  assert.equal(validateSupportSubmission({ ...validSubmission, project: "General question", topic: "Music collaboration" }).ok, true);
 });
 
 test("rejects unknown projects and short messages", () => {

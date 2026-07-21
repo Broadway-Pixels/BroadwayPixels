@@ -97,6 +97,9 @@
   .artist-hero-art { aspect-ratio: 4 / 3; }
   .artist-hero-art img { object-position: 63% center; }
   .creator-hero { min-height: min(720px, calc(100dvh - 72px)); }
+  .home-page .creative-lanes, .home-page .about-section { padding-block: clamp(68px, 8vw, 108px); }
+  .home-page .lane { min-height: 340px; }
+  .home-page .lane:first-child { min-height: 700px; }
 
   .section { width: var(--container); margin-inline: auto; padding-block: clamp(80px, 10vw, 140px); }
   .section-heading { max-width: 760px; margin-bottom: 48px; }
@@ -237,6 +240,9 @@
   .social-video-card span { color: var(--yellow); font-weight: 800; }
   .social-video-card h3 { margin-block: 7px 12px; color: white; font-size: clamp(2.1rem, 4vw, 4rem); }
   .social-video-card p { color: var(--blue-soft); font-weight: 750; }
+  .content-page .content-hero { padding-block: clamp(64px, 8vw, 108px) 56px; }
+  .content-page .content-hero h1 { font-size: clamp(3.3rem, 6vw, 5.8rem); }
+  .content-page .video-release-section, .content-page .shorts-section, .content-page .social-video-section { padding-block: clamp(64px, 8vw, 104px); }
 
   .support-hero { width: var(--container); margin-inline: auto; padding-block: clamp(54px, 8vw, 96px); display: grid; grid-template-columns: minmax(0, 0.78fr) minmax(440px, 1.22fr); align-items: center; gap: clamp(44px, 8vw, 110px); }
   .support-hero-copy h1 { max-width: 9ch; font-size: clamp(3.2rem, 5.5vw, 5.7rem); }
@@ -306,6 +312,7 @@
     .support-aside { position: static; }
     .lane:first-child { grid-row: auto; min-height: 470px; }
     .lane { min-height: 360px; }
+    .home-page .lane, .home-page .lane:first-child { min-height: 390px; }
     .project-showcase { grid-template-columns: 1fr; }
     .project-preview, .project-preview-wide { grid-column: auto; grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
     .project-preview-wide figure { aspect-ratio: 1.4; }
@@ -327,6 +334,7 @@
     .hero-art { aspect-ratio: 1; }
     .brand-image img { block-size: 38px; }
     .lane, .lane:first-child { min-height: 350px; }
+    .home-page .lane, .home-page .lane:first-child { min-height: 340px; }
     .latest-release-card { grid-template-columns: 1fr; }
     .latest-release-card img { min-height: 0; }
     .release-year { grid-template-columns: 1fr; gap: 18px; }

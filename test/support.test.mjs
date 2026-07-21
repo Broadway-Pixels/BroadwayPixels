@@ -20,7 +20,7 @@ test("validates a complete project support request", () => {
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "KixKan" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Music" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Content" }).ok, true);
-  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Website" }).ok, true);
+  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Partnerships" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "General question", topic: "Music collaboration" }).ok, true);
 });
 
@@ -28,6 +28,7 @@ test("rejects unknown projects and short messages", () => {
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Unknown" }).ok, false);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "ResellOps" }).ok, false);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Shop Market Deals" }).ok, false);
+  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Website" }).ok, false);
   assert.equal(validateSupportSubmission({ ...validSubmission, message: "Too short" }).ok, false);
 });
 

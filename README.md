@@ -12,12 +12,13 @@ Then open `http://localhost:8080`.
 
 ## Pages
 
-- `index.html`: music, content, apps, and artist story
+- `index.html`: focused studio introduction and latest work
 - `music.html`: year-grouped releases with direct Spotify and verified SoundCloud links
-- `projects.html`: filterable music, content, and app portfolio
+- `content.html`: YouTube video releases and Shorts
+- `projects.html`: apps, games, and software projects
 - `support.html`: single form for project support, collaborations, press, and general questions
 - `styles.css`: complete responsive design system
-- `script.js`: mobile navigation, scroll reveals, project filters, and current year
+- `script.js`: mobile navigation, scroll reveals, and current year
 - `support.js`: support form submission and UI states
 - `server.mjs`: dependency-free static server and Resend support endpoint for a droplet
 - `api/support.js`: serverless support endpoint for Vercel-compatible hosting
@@ -25,8 +26,8 @@ Then open `http://localhost:8080`.
 - `assets/artist-hero.webp` and `assets/artist-portrait.webp`: current artist photography from the live site
 - `assets/anything-cover.jpg`: Spotify artwork for the latest release, Anything
 - `assets/youtube-*.jpg`: current Broadway Pixels YouTube thumbnails
-- `assets/vidioza-dancing-fruit.jpg`: Vidioza product media used on Home and Projects
-- `assets/kixkan-project.jpg`: editorial project artwork for KixKan
+- `assets/vidioza-app-preview.png`: current Vidioza product website preview
+- `assets/tanktopia-app-preview.jpg`: current Tanktopia gameplay preview
 - `assets/app-worlds.jpg`: optimized app-development artwork
 - `assets/app-worlds.png`: original generated Broadway Pixels illustration
 
@@ -48,7 +49,3 @@ The support form needs a server endpoint, so run `server.mjs` behind Nginx inste
 The API key must only exist on the server. Never add the real key to `support.js`, HTML, Git, or Squarespace code injection. If the frontend remains on Squarespace, deploy `/api/support` separately and change the form fetch URL in `support.js` to that HTTPS endpoint.
 
 The contact email is `Media@BroadwayPixels.com`. Before launch, confirm project status language, final domain DNS, analytics, privacy copy, and social preview image.
-
-## Art prompt
-
-Built-in image generation was used for a wide editorial cartoon city connecting an aquarium game, barcode resale utility, and mobile storefront. The visual direction uses cobalt blue, powder blue, navy, off-white, and one warm yellow accent with no embedded text or logos.

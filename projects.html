@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#1557d6" />
-    <meta name="description" content="Explore music, creator content, and app projects from Broadway Pixels." />
+    <meta name="description" content="Explore apps and games developed by Broadway Pixels, including Vidioza, Tanktopia, and KixKan." />
     <meta property="og:title" content="Projects | Broadway Pixels" />
-    <meta property="og:description" content="Music releases, original videos, and mobile apps from Broadway Pixels." />
-    <meta property="og:image" content="assets/anything-cover.jpg" />
+    <meta property="og:description" content="Apps, games, and software projects from Broadway Pixels." />
+    <meta property="og:image" content="assets/vidioza-app-preview.png" />
     <title>Projects | Broadway Pixels</title>
-    <link rel="stylesheet" href="styles.css?v=20260720-3" />
-    <script src="script.js?v=20260720-3" defer></script>
+    <link rel="stylesheet" href="styles.css?v=20260720-4" />
+    <script src="script.js?v=20260720-4" defer></script>
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -20,7 +20,7 @@
       <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
         <a href="index.html">Home</a>
         <a href="music.html">Music</a>
-        <a href="index.html#content">Content</a>
+        <a href="content.html">Content</a>
         <a class="active" href="projects.html">Projects</a>
         <a href="index.html#about">About</a>
         <a href="support.html">Support</a>
@@ -29,56 +29,28 @@
 
     <main id="main">
       <header class="projects-hero reveal">
-        <h1>One studio. More than one medium.</h1>
-        <p>Music releases, original videos, and apps in development. Every project is another way to turn an idea into an experience.</p>
+        <p class="hero-kicker">Apps and games</p>
+        <h1>Software made with personality.</h1>
+        <p>Creator tools, cozy games, and an upcoming Linux distribution developed by Broadway Pixels.</p>
       </header>
 
-      <div class="filter-bar" role="group" aria-label="Filter projects">
-        <button class="filter-button active" type="button" data-filter="all" aria-pressed="true">All</button>
-        <button class="filter-button" type="button" data-filter="music" aria-pressed="false">Music</button>
-        <button class="filter-button" type="button" data-filter="content" aria-pressed="false">Content</button>
-        <button class="filter-button" type="button" data-filter="apps" aria-pressed="false">Apps</button>
-      </div>
-
-      <section class="work-grid" aria-label="Broadway Pixels projects">
-        <a class="work-card work-card-featured reveal" data-category="music" href="https://open.spotify.com/album/0VL7288O2SPb1Fw9A3n0Ko" target="_blank" rel="noreferrer">
-          <img src="assets/anything-cover.jpg" alt="Anything by Broadway Pixels" width="640" height="640" />
-          <div><p>Music</p><h2>Anything</h2><span>Latest single from Broadway Pixels</span></div>
+      <section class="project-showcase" aria-label="Broadway Pixels apps and games">
+        <a id="vidioza" class="project-preview project-preview-wide reveal" href="https://vidioza.ai/" target="_blank" rel="noreferrer">
+          <figure><img src="assets/vidioza-app-preview.png" alt="Vidioza website showing its AI short-form video creator" width="1440" height="980" /></figure>
+          <div class="project-preview-copy"><p>AI video creator</p><h2>Vidioza</h2><span>Turn one prompt into scripts, voiceovers, visuals, captions, and ready-to-post vertical video.</span><strong>Visit Vidioza <span aria-hidden="true">↗</span></strong></div>
         </a>
-        <a class="work-card reveal" data-category="content" href="https://www.youtube.com/watch?v=0gIvmaniAIQ" target="_blank" rel="noreferrer">
-          <img src="assets/youtube-favorite-spot.jpg" alt="Sea turtle at Mote Aquarium" width="480" height="360" loading="lazy" />
-          <div><p>Content</p><h2>One of my favorite spots</h2><span>Latest short from Broadway Pixels</span></div>
-        </a>
-        <article id="apps" class="work-card work-card-wide reveal" data-category="apps">
-          <img src="assets/app-worlds.jpg" alt="Broadway Pixels app worlds" width="1568" height="1003" loading="lazy" />
-          <div><p>App development</p><h2>Building the next collection</h2><span>Creator tools, cozy games, and practical mobile products.</span></div>
+        <article id="tanktopia" class="project-preview project-preview-game reveal">
+          <figure><img src="assets/tanktopia-app-preview.jpg" alt="Tanktopia mobile game aquarium screen with fish, care goals, and navigation" width="450" height="766" loading="lazy" /></figure>
+          <div class="project-preview-copy"><p>Cozy mobile game</p><h2>Tanktopia</h2><span>Care for fish, improve your tank, complete goals, and grow a colorful aquarium collection.</span><strong>In development</strong></div>
         </article>
-        <a id="vidioza" class="work-card app-project app-project-featured reveal" data-category="apps" href="https://vidioza.ai/" target="_blank" rel="noreferrer">
-          <img src="assets/vidioza-dancing-fruit.jpg" alt="Dancing fruit video created with Vidioza" width="540" height="960" loading="lazy" />
-          <div><p>AI video creator</p><h2>Vidioza</h2><span>Turn one prompt into scripts, voiceovers, visuals, captions, and vertical exports.</span></div>
-        </a>
-        <article id="tanktopia" class="work-card app-project app-project-featured reveal" data-category="apps">
-          <div class="app-crop crop-left"><img src="assets/app-worlds.jpg" alt="Tanktopia aquarium world" width="1568" height="1003" loading="lazy" /></div>
-          <div><p>Mobile game</p><h2>Tanktopia</h2><span>Clean, merge, collect, and decorate a growing aquarium.</span></div>
-        </article>
-        <article id="resellops" class="work-card app-project reveal" data-category="apps">
-          <div class="app-crop crop-center"><img src="assets/app-worlds.jpg" alt="ResellOps barcode scanner world" width="1568" height="1003" loading="lazy" /></div>
-          <div><p>Reseller utility</p><h2>ResellOps</h2><span>Scan a product, estimate the upside, and decide buy or pass.</span></div>
-        </article>
-        <article id="shop-market-deals" class="work-card app-project reveal" data-category="apps">
-          <div class="app-crop crop-right"><img src="assets/app-worlds.jpg" alt="Shop Market Deals storefront world" width="1568" height="1003" loading="lazy" /></div>
-          <div><p>Shopping app</p><h2>Shop Market Deals</h2><span>A mobile storefront built for faster discovery and checkout.</span></div>
-        </article>
-        <article id="kixkan" class="work-card app-project kixkan-project reveal" data-category="apps">
-          <img src="assets/kixkan-project.jpg" alt="Two people connecting through KixKan on their phones" width="1400" height="933" loading="lazy" />
-          <div><p>Communication app</p><h2>KixKan</h2><span>The original Broadway Pixels Android communication project, later expanded as KixKan Deluxe.</span></div>
+        <article id="kixkan" class="project-preview project-preview-kixkan reveal">
+          <div class="kixkan-mark" aria-hidden="true"><span>K</span><small>KixKan Linux</small></div>
+          <div class="project-preview-copy"><p>Linux distribution</p><h2>KixKan</h2><span>An upcoming Broadway Pixels Linux distribution. The project website will open when it is ready.</span><strong>KixKan.com coming soon</strong></div>
         </article>
       </section>
 
-      <p class="empty-state" hidden>No projects match this view yet.</p>
-
       <section class="contact-section reveal">
-        <div><h2>Have a track, video, or app idea?</h2><p>Tell Broadway Pixels what you want to make.</p></div>
+        <div><h2>Need help with a project?</h2><p>Get support for a Broadway Pixels app or ask about a collaboration.</p></div>
         <a class="button button-light" href="support.html?project=General%20question">Start a conversation</a>
       </section>
     </main>

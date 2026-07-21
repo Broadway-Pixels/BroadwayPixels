@@ -37,28 +37,3 @@ if (reduceMotion || !("IntersectionObserver" in window)) {
 
   revealItems.forEach((item) => observer.observe(item));
 }
-
-const filterButtons = document.querySelectorAll("[data-filter]");
-const projectItems = document.querySelectorAll("[data-category]");
-const emptyState = document.querySelector(".empty-state");
-
-filterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    const filter = button.dataset.filter;
-    let visibleCount = 0;
-
-    filterButtons.forEach((item) => {
-      const selected = item === button;
-      item.classList.toggle("active", selected);
-      item.setAttribute("aria-pressed", String(selected));
-    });
-
-    projectItems.forEach((project) => {
-      const matches = filter === "all" || project.dataset.category === filter;
-      project.hidden = !matches;
-      if (matches) visibleCount += 1;
-    });
-
-    if (emptyState) emptyState.hidden = visibleCount > 0;
-  });
-});

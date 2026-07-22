@@ -104,7 +104,7 @@
   .section-heading { max-width: 760px; margin-bottom: 48px; }
   .section-heading p { max-width: 52ch; margin-top: 18px; color: var(--muted); font-size: 1.1rem; }
   .music-page-hero { width: var(--container); margin-inline: auto; padding-block: clamp(70px, 10vw, 130px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr); align-items: center; gap: clamp(48px, 9vw, 130px); border-bottom: 1px solid var(--line); }
-  .music-page-hero h1 { font-size: clamp(3.3rem, 6vw, 5.8rem); }
+  .music-page-hero h1 { font-size: clamp(2.1rem, 5vw, 5rem); white-space: nowrap; }
   .platform-actions { display: flex; flex-wrap: wrap; gap: 12px; }
   .music-page-hero .platform-actions { margin-top: 30px; }
   .platform-actions .button-secondary { margin-top: 0; }
@@ -234,7 +234,7 @@
   .short-card span { color: var(--blue); font-size: .88rem; font-weight: 800; }
   .short-card h3 { margin-top: 8px; }
   .content-page .content-hero { padding-block: clamp(64px, 8vw, 108px) 56px; }
-  .content-page .content-hero h1 { font-size: clamp(3.3rem, 6vw, 5.8rem); }
+  .content-page .content-hero h1 { max-width: none; font-size: clamp(3.3rem, 6vw, 5.8rem); white-space: nowrap; }
   .content-page .video-release-section, .content-page .shorts-section { padding-block: clamp(64px, 8vw, 104px); }
 
   .support-hero { width: var(--container); margin-inline: auto; padding-block: clamp(54px, 8vw, 96px); display: grid; grid-template-columns: minmax(0, 0.78fr) minmax(440px, 1.22fr); align-items: center; gap: clamp(44px, 8vw, 110px); }
@@ -322,6 +322,8 @@
 
   @media (width <= 640px) {
     h1 { font-size: clamp(3rem, 15vw, 4.75rem); }
+    .music-page-hero h1 { font-size: clamp(2.1rem, 10.5vw, 2.6rem); }
+    .content-page .content-hero h1 { max-width: none; font-size: clamp(2rem, 10vw, 2.4rem); white-space: nowrap; }
     .hero-actions { align-items: flex-start; flex-direction: column; }
     .hero-art { aspect-ratio: 1; }
     .brand-image img { block-size: 38px; }

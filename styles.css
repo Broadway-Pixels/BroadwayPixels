@@ -86,8 +86,9 @@
   .site-nav .nav-cta { padding: 10px 15px; background: var(--blue-fill); color: white; border-radius: 8px; }
   .site-nav .nav-cta:hover { background: var(--blue-fill-hover); color: white; }
   .theme-toggle, .dashboard-text-button { min-height: 38px; border: 1px solid var(--line); border-radius: 8px; background: var(--sky); color: var(--ink); padding: 7px 11px; font-size: .82rem; font-weight: 800; cursor: pointer; white-space: nowrap; }
-  .theme-toggle { order: 3; display: grid; place-items: center; inline-size: 40px; block-size: 40px; min-height: 40px; padding: 0; color: var(--blue); }
+  .theme-toggle { position: relative; order: 3; display: grid; place-items: center; inline-size: 40px; block-size: 40px; min-height: 40px; padding: 0; color: var(--blue); }
   .theme-toggle::before { content: ""; inline-size: 21px; block-size: 21px; background: currentColor; -webkit-mask: url("/assets/icon-lightbulb.svg") center / contain no-repeat; mask: url("/assets/icon-lightbulb.svg") center / contain no-repeat; }
+  .theme-toggle[data-theme-state="auto"]::after { content: "A"; position: absolute; inset: -4px -4px auto auto; display: grid; place-items: center; inline-size: 16px; block-size: 16px; border: 2px solid var(--paper); border-radius: 50%; background: var(--blue-fill); color: white; font-size: 0.58rem; font-weight: 900; line-height: 1; }
   .theme-toggle:hover, .dashboard-text-button:hover { border-color: var(--blue); color: var(--blue); }
   .menu-button { order: 4; display: none; border: 1px solid var(--line); background: var(--paper); color: var(--ink); padding: 8px 12px; border-radius: 8px; font-weight: 800; }
 

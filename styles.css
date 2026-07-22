@@ -120,7 +120,7 @@
   .lane-apps img { object-position: center 44%; }
 
   .music-page-hero { width: var(--container); margin-inline: auto; padding-block: clamp(70px, 10vw, 130px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 0.72fr); align-items: center; gap: clamp(48px, 9vw, 130px); }
-  .music-page-hero h1 { font-size: clamp(3rem, 5.5vw, 5.6rem); }
+  .music-page-hero h1 { font-size: clamp(2.1rem, 5vw, 5rem); white-space: nowrap; }
   .music-page-hero > div > p { max-width: 50ch; margin-block: 22px 30px; color: var(--muted); font-size: 1.12rem; }
   .platform-actions { display: flex; flex-wrap: wrap; gap: 12px; }
   .platform-actions .button-secondary { margin-top: 0; }
@@ -316,6 +316,7 @@
     .hero-art { aspect-ratio: 1.35; }
     .lane-grid, .about-section { grid-template-columns: 1fr; }
     .music-page-hero { grid-template-columns: 1fr; }
+    .music-page-hero > div { min-width: 0; }
     .support-hero, .support-layout { grid-template-columns: 1fr; }
     .support-hero-art { aspect-ratio: 4 / 3; }
     .support-aside { position: static; }
@@ -340,6 +341,7 @@
 
   @media (width <= 640px) {
     h1 { font-size: clamp(3rem, 15vw, 4.75rem); }
+    .music-page-hero h1 { font-size: clamp(2.1rem, 10.5vw, 2.6rem); }
     .hero-actions { align-items: flex-start; flex-direction: column; }
     .hero-art { aspect-ratio: 1; }
     .brand-image img { block-size: 38px; }

@@ -274,7 +274,7 @@
   .support-form-heading p { max-width: 48ch; margin-top: 14px; color: var(--muted); }
   .support-form { display: grid; gap: 24px; }
   .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
-  .form-field { display: grid; gap: 8px; }
+  .form-field { display: grid; align-content: start; gap: 8px; }
   .form-field label { color: var(--ink); font-weight: 800; }
   .form-field label span { color: var(--muted); font-weight: 650; }
   .form-field input, .form-field select, .form-field textarea { width: 100%; border: 1px solid #7898cf; border-radius: 9px; background: var(--paper); color: var(--ink); padding: 13px 14px; font: inherit; line-height: 1.4; transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }

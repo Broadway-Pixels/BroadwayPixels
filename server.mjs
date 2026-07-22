@@ -13,7 +13,8 @@ import {
   verifyDashboardSession,
 } from "./lib/dashboard-auth.mjs";
 import { resolvePublicRequest } from "./lib/routes.mjs";
-import { isAllowedOrigin, sendSupportEmail, validateSupportSubmission } from "./lib/support.mjs";
+import { isAllowedOrigin, sendSupportEmails, validateSupportSubmission } from "./lib/support.mjs";
+import { createTicketId, TicketStore } from "./lib/tickets.mjs";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 const port = Number(process.env.PORT || 8080);
@@ -21,6 +22,7 @@ const supportAttempts = new Map();
 const analyticsAttempts = new Map();
 const loginAttempts = new Map();
 const analyticsStore = new AnalyticsStore(process.env.ANALYTICS_DATA_DIR || join(root, "data", "analytics"));
+const ticketStore = new TicketStore(process.env.SUPPORT_DATA_DIR || join(root, "data", "tickets"));
 const mimeTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -65,18 +67,45 @@ async function handleSupport(request, response) {
   if (!isAllowedOrigin(request.headers, process.env.ALLOWED_ORIGINS)) return json(response, 403, { message: "Request origin is not allowed." });
   if (isRateLimited(supportAttempts, clientAddress(request), 5, 10 * 60 * 1000)) return json(response, 429, { message: "Too many requests. Try again in a few minutes." });
 
+  let body;
   try {
-    const validation = validateSupportSubmission(await readJson(request));
-    if (!validation.ok) {
-      if (validation.silent) return json(response, 200, { message: validation.message });
-      return json(response, 422, { message: validation.message });
-    }
-    const result = await sendSupportEmail(validation.submission, process.env);
-    if (!result.ok) return json(response, result.status, { message: result.message });
-    return json(response, 200, { message: "Support request sent.", id: result.id });
+    body = await readJson(request);
   } catch {
     return json(response, 400, { message: "Request body must be valid JSON." });
   }
+  const validation = validateSupportSubmission(body);
+  if (!validation.ok) {
+    if (validation.silent) return json(response, 200, { message: validation.message });
+    return json(response, 422, { message: validation.message });
+  }
+
+  const ticketId = createTicketId(validation.submission.requestId);
+  const result = await sendSupportEmails(validation.submission, ticketId, process.env);
+  if (!result.ok) return json(response, result.status, { message: result.message });
+
+  try {
+    await ticketStore.record({
+      ticketId,
+      name: validation.submission.name,
+      email: validation.submission.email,
+      project: validation.submission.project,
+      topic: validation.submission.topic,
+      message: validation.submission.message,
+      link: validation.submission.link,
+      confirmationSent: result.confirmationSent,
+      notificationEmailId: result.id,
+      confirmationEmailId: result.confirmationId || "",
+    });
+  } catch (error) {
+    console.error("Support ticket recording failed", error);
+    return json(response, 500, { message: "Your email was sent, but the ticket could not be recorded. Please submit again." });
+  }
+
+  return json(response, 200, {
+    message: "Support request sent.",
+    ticketId,
+    confirmationSent: result.confirmationSent,
+  });
 }
 
 async function handleAnalytics(request, response) {
@@ -136,6 +165,29 @@ async function handleDashboardStats(request, response, url) {
   }
 }
 
+async function handleDashboardTickets(request, response, url) {
+  if (request.method !== "GET") return json(response, 405, { message: "Method not allowed." });
+  if (!dashboardAuthorized(request)) return json(response, 401, { message: "Sign in to view support tickets." });
+  try {
+    const limit = Math.min(250, Math.max(1, Number(url.searchParams.get("limit")) || 100));
+    const tickets = (await ticketStore.list(limit)).map((ticket) => ({
+      ticketId: ticket.ticketId,
+      name: ticket.name,
+      email: ticket.email,
+      project: ticket.project,
+      topic: ticket.topic,
+      message: ticket.message,
+      link: ticket.link,
+      confirmationSent: ticket.confirmationSent,
+      createdAt: ticket.createdAt,
+    }));
+    return json(response, 200, { tickets, generatedAt: new Date().toISOString() });
+  } catch (error) {
+    console.error("Dashboard tickets failed", error);
+    return json(response, 500, { message: "Support tickets are temporarily unavailable." });
+  }
+}
+
 function handleDashboardLogout(request, response) {
   if (request.method !== "POST") return json(response, 405, { message: "Method not allowed." });
   if (!isAllowedOrigin(request.headers, process.env.ALLOWED_ORIGINS)) return json(response, 403, { message: "Request origin is not allowed." });
@@ -154,6 +206,7 @@ createServer(async (request, response) => {
   if (url.pathname === "/api/analytics/view") return handleAnalytics(request, response);
   if (url.pathname === "/api/dashboard/login") return handleDashboardLogin(request, response);
   if (url.pathname === "/api/dashboard/stats") return handleDashboardStats(request, response, url);
+  if (url.pathname === "/api/dashboard/tickets") return handleDashboardTickets(request, response, url);
   if (url.pathname === "/api/dashboard/logout") return handleDashboardLogout(request, response);
   if (url.pathname === "/api/dashboard/session") return handleDashboardSession(request, response);
   if (!["GET", "HEAD"].includes(request.method)) return json(response, 405, { message: "Method not allowed." });

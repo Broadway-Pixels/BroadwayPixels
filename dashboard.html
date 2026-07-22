@@ -9,9 +9,9 @@
     <link rel="icon" type="image/png" sizes="512x512" href="/assets/broadway-pixels-favicon.png?v=20260722-2" />
     <link rel="apple-touch-icon" href="/assets/broadway-pixels-favicon.png?v=20260722-2" />
     <script src="/theme.js?v=20260722-2"></script>
-    <link rel="stylesheet" href="/styles.css?v=20260722-14" />
+    <link rel="stylesheet" href="/styles.css?v=20260722-17" />
     <script src="/script.js?v=20260722-7" defer></script>
-    <script src="/dashboard.js?v=20260722-1" defer></script>
+    <script src="/dashboard.js?v=20260722-2" defer></script>
   </head>
   <body class="dashboard-page">
     <a class="skip-link" href="#main">Skip to dashboard</a>
@@ -67,6 +67,14 @@
           <article><span>Active now</span><strong id="metric-live">0</strong><small>Sessions in the last 30 minutes</small></article>
         </section>
 
+        <section class="dashboard-panel dashboard-tickets" aria-labelledby="tickets-title">
+          <div class="dashboard-panel-heading dashboard-ticket-heading">
+            <div><h2 id="tickets-title">Support tickets</h2><p>Messages submitted through BroadwayPixels.com</p></div>
+            <strong id="ticket-count">0 tickets</strong>
+          </div>
+          <div id="ticket-list" class="ticket-list"></div>
+        </section>
+
         <section class="dashboard-panel dashboard-trend" aria-labelledby="trend-title">
           <div class="dashboard-panel-heading"><h2 id="trend-title">Traffic over time</h2><p>Daily page views</p></div>
           <div id="traffic-chart" class="traffic-chart" aria-label="Daily page view bar chart"></div>
@@ -87,7 +95,7 @@
           </section>
           <section class="dashboard-panel dashboard-privacy" aria-labelledby="privacy-title">
             <div class="dashboard-panel-heading"><h2 id="privacy-title">Privacy built in</h2></div>
-            <p>Analytics use anonymous session IDs and do not retain visitor IP addresses, names, email addresses, or full referrer URLs.</p>
+            <p>Analytics use anonymous session IDs and do not retain visitor IP addresses or full referrer URLs. Support tickets are stored separately and visible only in this private dashboard.</p>
           </section>
         </div>
       </section>

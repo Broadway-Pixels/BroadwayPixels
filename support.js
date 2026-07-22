@@ -40,7 +40,9 @@ supportForm?.addEventListener("submit", async (event) => {
     if (!response.ok) throw new Error(result.message || "Your message could not be sent.");
 
     supportStatus.className = "form-status form-status-success";
-    supportStatus.textContent = "Your message was sent. Broadway Pixels will reply by email.";
+    supportStatus.textContent = result.confirmationSent
+      ? `Your message was sent. Ticket ${result.ticketId}. A confirmation was emailed to ${payload.email}.`
+      : `Your message was sent as ticket ${result.ticketId}. Broadway Pixels will reply by email.`;
     supportForm.reset();
     if (requestIdInput) requestIdInput.value = newRequestId();
   } catch (error) {

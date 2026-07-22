@@ -91,6 +91,71 @@ function renderDevices(devices, total) {
   });
 }
 
+function renderTickets(tickets) {
+  const target = document.querySelector("#ticket-list");
+  const count = document.querySelector("#ticket-count");
+  target.replaceChildren();
+  count.textContent = `${formatNumber(tickets.length)} ${tickets.length === 1 ? "ticket" : "tickets"}`;
+
+  if (!tickets.length) {
+    const empty = document.createElement("p");
+    empty.className = "dashboard-empty";
+    empty.textContent = "No support tickets have been submitted yet.";
+    target.append(empty);
+    return;
+  }
+
+  tickets.forEach((ticket) => {
+    const card = document.createElement("article");
+    card.className = "ticket-card";
+
+    const header = document.createElement("div");
+    header.className = "ticket-card-header";
+    const identity = document.createElement("div");
+    const ticketId = document.createElement("strong");
+    ticketId.className = "ticket-card-id";
+    ticketId.textContent = ticket.ticketId;
+    const meta = document.createElement("p");
+    meta.className = "ticket-card-meta";
+    meta.textContent = `${ticket.project} | ${ticket.name} | ${ticket.email}`;
+    identity.append(ticketId, meta);
+    const time = document.createElement("time");
+    time.dateTime = ticket.createdAt;
+    time.textContent = new Date(ticket.createdAt).toLocaleString();
+    header.append(identity, time);
+
+    const topic = document.createElement("h3");
+    topic.textContent = ticket.topic;
+    const message = document.createElement("p");
+    message.className = "ticket-card-message";
+    message.textContent = ticket.message;
+
+    const footer = document.createElement("div");
+    footer.className = "ticket-card-footer";
+    const links = document.createElement("div");
+    links.className = "ticket-links";
+    const reply = document.createElement("a");
+    reply.href = `mailto:${ticket.email}?subject=${encodeURIComponent(`[${ticket.ticketId}] ${ticket.topic}`)}`;
+    reply.textContent = "Reply by email";
+    links.append(reply);
+    if (ticket.link) {
+      const helpfulLink = document.createElement("a");
+      helpfulLink.href = ticket.link;
+      helpfulLink.target = "_blank";
+      helpfulLink.rel = "noreferrer";
+      helpfulLink.textContent = "Open helpful link";
+      links.append(helpfulLink);
+    }
+    const confirmation = document.createElement("span");
+    confirmation.className = `ticket-confirmation${ticket.confirmationSent ? "" : " ticket-confirmation-warning"}`;
+    confirmation.textContent = ticket.confirmationSent ? "Confirmation sent" : "Confirmation needs follow-up";
+    footer.append(links, confirmation);
+
+    card.append(header, topic, message, footer);
+    target.append(card);
+  });
+}
+
 function renderStats(stats) {
   document.querySelector("#metric-views").textContent = formatNumber(stats.totals.pageViews);
   document.querySelector("#metric-sessions").textContent = formatNumber(stats.totals.sessions);
@@ -105,18 +170,23 @@ function renderStats(stats) {
 }
 
 async function loadStats() {
-  dashboardStatus.textContent = "Loading stats.";
+  dashboardStatus.textContent = "Loading dashboard.";
   try {
-    const response = await fetch(`/api/dashboard/stats?days=${selectedDays}`, { headers: { Accept: "application/json" } });
-    if (response.status === 401) {
+    const [statsResponse, ticketsResponse] = await Promise.all([
+      fetch(`/api/dashboard/stats?days=${selectedDays}`, { headers: { Accept: "application/json" } }),
+      fetch("/api/dashboard/tickets?limit=100", { headers: { Accept: "application/json" } }),
+    ]);
+    if (statsResponse.status === 401 || ticketsResponse.status === 401) {
       setAuthenticated(false);
       dashboardStatus.textContent = "";
       return;
     }
-    const result = await response.json();
-    if (!response.ok) throw new Error(result.message || "Stats could not be loaded.");
+    const [result, ticketResult] = await Promise.all([statsResponse.json(), ticketsResponse.json()]);
+    if (!statsResponse.ok) throw new Error(result.message || "Stats could not be loaded.");
+    if (!ticketsResponse.ok) throw new Error(ticketResult.message || "Tickets could not be loaded.");
     setAuthenticated(true);
     renderStats(result);
+    renderTickets(ticketResult.tickets || []);
     dashboardStatus.textContent = "";
   } catch (error) {
     dashboardStatus.textContent = error.message;

@@ -31,7 +31,7 @@ test("projects page includes the Pixelated Discord bot", async () => {
   const projects = await readFile(new URL("../projects.html", import.meta.url), "utf8");
   assert.match(projects, /id="pixelated"/);
   assert.match(projects, /<h2>Pixelated<\/h2>/);
-  assert.match(projects, /A Discord bot for moderation logs, community commands, XP, and Broadway Pixels social updates\./);
+  assert.match(projects, /A Discord bot for moderation logs, community commands, XP, and custom rank cards\./);
 });
 
 test("dashboard stays out of search and public analytics", async () => {

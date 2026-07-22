@@ -1,4 +1,5 @@
-import { isAllowedOrigin, sendSupportEmail, validateSupportSubmission } from "../lib/support.mjs";
+import { isAllowedOrigin, sendSupportEmails, validateSupportSubmission } from "../lib/support.mjs";
+import { createTicketId } from "../lib/tickets.mjs";
 
 const attempts = new Map();
 const windowMs = 10 * 60 * 1000;
@@ -32,7 +33,8 @@ export default async function handler(request, response) {
     return response.status(422).json({ message: validation.message });
   }
 
-  const result = await sendSupportEmail(validation.submission, process.env);
+  const ticketId = createTicketId(validation.submission.requestId);
+  const result = await sendSupportEmails(validation.submission, ticketId, process.env);
   if (!result.ok) return response.status(result.status).json({ message: result.message });
-  return response.status(200).json({ message: "Support request sent.", id: result.id });
+  return response.status(200).json({ message: "Support request sent.", ticketId, confirmationSent: result.confirmationSent });
 }

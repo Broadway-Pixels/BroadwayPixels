@@ -338,6 +338,21 @@
   .dashboard-panel-heading { margin-bottom: 28px; }
   .dashboard-panel-heading h2 { font-size: clamp(1.8rem, 3vw, 2.9rem); }
   .dashboard-panel-heading p { margin-top: 8px; color: var(--muted); }
+  .dashboard-ticket-heading { display: flex; align-items: start; justify-content: space-between; gap: 24px; }
+  .dashboard-ticket-heading > strong { flex: 0 0 auto; padding: 8px 11px; border-radius: 8px; background: var(--blue-fill); color: white; font-size: .82rem; }
+  .ticket-list { display: grid; gap: 14px; }
+  .ticket-card { padding: 22px; display: grid; gap: 15px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+  .ticket-card-header { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
+  .ticket-card-header > div { min-width: 0; }
+  .ticket-card-id { color: var(--blue); font-size: 1.05rem; }
+  .ticket-card time, .ticket-card-meta { color: var(--muted); font-size: .86rem; }
+  .ticket-card h3 { font-size: clamp(1.2rem, 2vw, 1.55rem); }
+  .ticket-card-message { color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ticket-card-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+  .ticket-card-footer a { color: var(--blue); font-weight: 800; text-underline-offset: 3px; }
+  .ticket-links { display: flex; flex-wrap: wrap; gap: 10px 18px; }
+  .ticket-confirmation { color: #168252; font-size: .82rem; font-weight: 850; }
+  .ticket-confirmation-warning { color: #b45309; }
   .dashboard-trend { min-height: 360px; }
   .traffic-chart { min-height: 225px; display: grid; grid-template-columns: repeat(auto-fit, minmax(24px, 1fr)); align-items: end; gap: clamp(4px, .8vw, 10px); }
   .traffic-column { height: 225px; display: grid; grid-template-rows: 24px 170px 31px; align-items: end; text-align: center; }
@@ -450,6 +465,8 @@
     .dashboard-intro { align-items: flex-start; flex-direction: column; }
     .dashboard-ranges { width: 100%; }
     .dashboard-ranges button { flex: 1; }
+    .dashboard-ticket-heading, .ticket-card-header { align-items: flex-start; flex-direction: column; }
+    .ticket-card { padding: 18px; }
     .dashboard-metrics { grid-template-columns: 1fr; }
     .dashboard-metrics article, .dashboard-metrics article:nth-child(2) { border-right: 0; border-bottom: 1px solid var(--line); }
     .dashboard-metrics article:last-child { border-bottom: 0; }

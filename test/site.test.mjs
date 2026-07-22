@@ -13,7 +13,7 @@ test("homepage uses the Broadway Pixels creator and developer SEO title", async 
 test("every public page loads the early theme and offers a theme control", async () => {
   const pages = await Promise.all(publicPages.map((file) => readFile(new URL(`../${file}`, import.meta.url), "utf8")));
   pages.forEach((page) => {
-    assert.match(page, /<script src="\/theme\.js\?v=20260722-1"><\/script>/);
+    assert.match(page, /<script src="\/theme\.js\?v=20260722-2"><\/script>/);
     assert.match(page, /data-theme-toggle/);
     assert.match(page, /script\.js\?v=20260722-7/);
   });

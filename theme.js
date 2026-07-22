@@ -25,7 +25,9 @@
     const themeColor = document.querySelector('meta[name="theme-color"]');
     themeColor?.setAttribute("content", theme === "dark" ? "#08142d" : "#1557d6");
     document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
-      button.textContent = `Theme: ${preference === "auto" ? "Auto" : theme[0].toUpperCase() + theme.slice(1)}`;
+      const preferenceLabel = preference === "auto" ? "Auto" : theme[0].toUpperCase() + theme.slice(1);
+      button.dataset.themeState = preference;
+      button.title = `Theme: ${preferenceLabel}`;
       button.setAttribute("aria-label", `Theme is ${theme}. ${preference === "auto" ? "Automatic by local time." : "Manual setting."} Activate to change.`);
     });
     return theme;
@@ -49,4 +51,3 @@
     if (storedPreference() === "auto") applyTheme("auto");
   }, 60_000);
 })();
-

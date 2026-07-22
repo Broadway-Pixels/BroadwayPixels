@@ -19,6 +19,14 @@ test("every public page loads the early theme and offers a theme control", async
   });
 });
 
+test("every public page links to the Broadway Pixels Discord", async () => {
+  const pages = await Promise.all(publicPages.map((file) => readFile(new URL(`../${file}`, import.meta.url), "utf8")));
+  pages.forEach((page) => {
+    assert.match(page, /href="https:\/\/discord\.gg\/KCVFeUZux"/);
+    assert.match(page, /src="assets\/icon-discord\.svg"/);
+  });
+});
+
 test("dashboard stays out of search and public analytics", async () => {
   const dashboard = await readFile(new URL("../dashboard.html", import.meta.url), "utf8");
   const clientScript = await readFile(new URL("../script.js", import.meta.url), "utf8");

@@ -9,6 +9,7 @@ Group=www-data
 WorkingDirectory=/var/www/broadwaypixels
 Environment=NODE_ENV=production
 Environment=PORT=8080
+EnvironmentFile=/etc/broadway-pixels.env
 ExecStart=/usr/bin/node /var/www/broadwaypixels/server.mjs
 Restart=on-failure
 RestartSec=5

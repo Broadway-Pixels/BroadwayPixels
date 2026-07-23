@@ -5,7 +5,10 @@ const loginStatus = document.querySelector("#dashboard-login-status");
 const dashboardStatus = document.querySelector("#dashboard-status");
 const logoutButton = document.querySelector("#dashboard-logout");
 const rangeButtons = document.querySelectorAll("[data-days]");
+const ticketViewButtons = document.querySelectorAll("[data-ticket-view]");
 let selectedDays = 30;
+let selectedTicketView = "open";
+let dashboardTickets = [];
 
 function setAuthenticated(authenticated) {
   loginSection.hidden = authenticated;
@@ -91,16 +94,50 @@ function renderDevices(devices, total) {
   });
 }
 
-function renderTickets(tickets) {
+function requestId() {
+  return globalThis.crypto?.randomUUID?.() || `dashboard-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function setDashboardMessage(message, error = false) {
+  dashboardStatus.textContent = message;
+  dashboardStatus.className = `dashboard-status${error ? " dashboard-status-error" : ""}`;
+}
+
+async function ticketAction(ticketId, action, options = {}) {
+  const response = await fetch(`/api/dashboard/tickets/${ticketId}${action === "delete" ? "" : `/${action}`}`, {
+    method: action === "delete" ? "DELETE" : "POST",
+    headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}) },
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  });
+  const result = await response.json();
+  if (response.status === 401) {
+    setAuthenticated(false);
+    throw new Error("Your dashboard session expired. Sign in again.");
+  }
+  if (!response.ok) throw new Error(result.message || "The ticket could not be updated.");
+  return result;
+}
+
+function renderTickets() {
   const target = document.querySelector("#ticket-list");
   const count = document.querySelector("#ticket-count");
+  const openTickets = dashboardTickets.filter((ticket) => ticket.status !== "archived");
+  const archivedTickets = dashboardTickets.filter((ticket) => ticket.status === "archived");
+  const tickets = selectedTicketView === "archived" ? archivedTickets : openTickets;
   target.replaceChildren();
-  count.textContent = `${formatNumber(tickets.length)} ${tickets.length === 1 ? "ticket" : "tickets"}`;
+  count.textContent = `${formatNumber(openTickets.length)} open`;
+  document.querySelector("#open-ticket-count").textContent = formatNumber(openTickets.length);
+  document.querySelector("#archived-ticket-count").textContent = formatNumber(archivedTickets.length);
+  ticketViewButtons.forEach((button) => {
+    const active = button.dataset.ticketView === selectedTicketView;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", String(active));
+  });
 
   if (!tickets.length) {
     const empty = document.createElement("p");
     empty.className = "dashboard-empty";
-    empty.textContent = "No support tickets have been submitted yet.";
+    empty.textContent = selectedTicketView === "archived" ? "No archived tickets." : "No open support tickets.";
     target.append(empty);
     return;
   }
@@ -108,6 +145,7 @@ function renderTickets(tickets) {
   tickets.forEach((ticket) => {
     const card = document.createElement("article");
     card.className = "ticket-card";
+    card.dataset.status = ticket.status;
 
     const header = document.createElement("div");
     header.className = "ticket-card-header";
@@ -132,26 +170,131 @@ function renderTickets(tickets) {
 
     const footer = document.createElement("div");
     footer.className = "ticket-card-footer";
-    const links = document.createElement("div");
-    links.className = "ticket-links";
-    const reply = document.createElement("a");
-    reply.href = `mailto:${ticket.email}?subject=${encodeURIComponent(`[${ticket.ticketId}] ${ticket.topic}`)}`;
-    reply.textContent = "Reply by email";
-    links.append(reply);
+    const actions = document.createElement("div");
+    actions.className = "ticket-actions";
+    const replyButton = document.createElement("button");
+    replyButton.className = "ticket-action ticket-action-primary";
+    replyButton.type = "button";
+    replyButton.textContent = "Reply";
+    const emailLink = document.createElement("a");
+    emailLink.className = "ticket-action";
+    emailLink.href = `mailto:${ticket.email}?subject=${encodeURIComponent(`[${ticket.ticketId}] ${ticket.topic}`)}`;
+    emailLink.textContent = "Email app";
+    const archiveButton = document.createElement("button");
+    archiveButton.className = "ticket-action";
+    archiveButton.type = "button";
+    archiveButton.textContent = ticket.status === "archived" ? "Restore" : "Archive";
+    const deleteButton = document.createElement("button");
+    deleteButton.className = "ticket-action ticket-action-danger";
+    deleteButton.type = "button";
+    deleteButton.textContent = "Delete";
+    actions.append(replyButton, emailLink, archiveButton, deleteButton);
     if (ticket.link) {
       const helpfulLink = document.createElement("a");
+      helpfulLink.className = "ticket-action";
       helpfulLink.href = ticket.link;
       helpfulLink.target = "_blank";
       helpfulLink.rel = "noreferrer";
-      helpfulLink.textContent = "Open helpful link";
-      links.append(helpfulLink);
+      helpfulLink.textContent = "Helpful link";
+      actions.insertBefore(helpfulLink, archiveButton);
     }
+    const delivery = document.createElement("div");
+    delivery.className = "ticket-delivery";
     const confirmation = document.createElement("span");
     confirmation.className = `ticket-confirmation${ticket.confirmationSent ? "" : " ticket-confirmation-warning"}`;
     confirmation.textContent = ticket.confirmationSent ? "Confirmation sent" : "Confirmation needs follow-up";
-    footer.append(links, confirmation);
+    delivery.append(confirmation);
+    if (ticket.replyCount) {
+      const replySummary = document.createElement("span");
+      replySummary.textContent = `${ticket.replyCount} ${ticket.replyCount === 1 ? "reply" : "replies"}${ticket.lastRepliedAt ? ` · Last ${new Date(ticket.lastRepliedAt).toLocaleString()}` : ""}`;
+      delivery.append(replySummary);
+    }
+    footer.append(actions, delivery);
 
-    card.append(header, topic, message, footer);
+    const replyForm = document.createElement("form");
+    replyForm.className = "ticket-reply-form";
+    replyForm.hidden = true;
+    const replyLabel = document.createElement("label");
+    replyLabel.htmlFor = `reply-${ticket.ticketId}`;
+    replyLabel.textContent = `Reply to ${ticket.name}`;
+    const replyTextarea = document.createElement("textarea");
+    replyTextarea.id = `reply-${ticket.ticketId}`;
+    replyTextarea.name = "message";
+    replyTextarea.rows = 5;
+    replyTextarea.minLength = 2;
+    replyTextarea.maxLength = 5000;
+    replyTextarea.required = true;
+    replyTextarea.placeholder = "Write your reply";
+    const replyFormActions = document.createElement("div");
+    replyFormActions.className = "ticket-reply-actions";
+    const sendButton = document.createElement("button");
+    sendButton.className = "ticket-action ticket-action-primary";
+    sendButton.type = "submit";
+    sendButton.textContent = "Send reply";
+    const cancelButton = document.createElement("button");
+    cancelButton.className = "ticket-action";
+    cancelButton.type = "button";
+    cancelButton.textContent = "Cancel";
+    const replyStatus = document.createElement("p");
+    replyStatus.className = "form-status";
+    replyStatus.setAttribute("role", "status");
+    replyStatus.setAttribute("aria-live", "polite");
+    replyFormActions.append(sendButton, cancelButton);
+    replyForm.append(replyLabel, replyTextarea, replyFormActions, replyStatus);
+
+    replyButton.addEventListener("click", () => {
+      replyForm.hidden = false;
+      replyTextarea.focus();
+    });
+    cancelButton.addEventListener("click", () => {
+      replyForm.hidden = true;
+      replyStatus.textContent = "";
+    });
+    replyForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      sendButton.disabled = true;
+      replyStatus.textContent = "Sending reply.";
+      replyStatus.className = "form-status form-status-pending";
+      try {
+        const result = await ticketAction(ticket.ticketId, "reply", { body: { message: replyTextarea.value, requestId: requestId() } });
+        ticket.replyCount = (ticket.replyCount || 0) + 1;
+        ticket.lastRepliedAt = result.repliedAt;
+        setDashboardMessage(`Reply sent for ${ticket.ticketId}.`);
+        renderTickets();
+      } catch (error) {
+        replyStatus.textContent = error.message;
+        replyStatus.className = "form-status form-status-error";
+        sendButton.disabled = false;
+      }
+    });
+    archiveButton.addEventListener("click", async () => {
+      archiveButton.disabled = true;
+      try {
+        const action = ticket.status === "archived" ? "unarchive" : "archive";
+        const result = await ticketAction(ticket.ticketId, action);
+        ticket.status = result.status;
+        setDashboardMessage(`${ticket.ticketId} ${result.status === "archived" ? "archived" : "restored"}.`);
+        renderTickets();
+      } catch (error) {
+        setDashboardMessage(error.message, true);
+        archiveButton.disabled = false;
+      }
+    });
+    deleteButton.addEventListener("click", async () => {
+      if (!globalThis.confirm(`Permanently delete ${ticket.ticketId}? This cannot be undone.`)) return;
+      deleteButton.disabled = true;
+      try {
+        await ticketAction(ticket.ticketId, "delete");
+        dashboardTickets = dashboardTickets.filter((item) => item.ticketId !== ticket.ticketId);
+        setDashboardMessage(`${ticket.ticketId} deleted.`);
+        renderTickets();
+      } catch (error) {
+        setDashboardMessage(error.message, true);
+        deleteButton.disabled = false;
+      }
+    });
+
+    card.append(header, topic, message, footer, replyForm);
     target.append(card);
   });
 }
@@ -186,8 +329,9 @@ async function loadStats() {
     if (!ticketsResponse.ok) throw new Error(ticketResult.message || "Tickets could not be loaded.");
     setAuthenticated(true);
     renderStats(result);
-    renderTickets(ticketResult.tickets || []);
-    dashboardStatus.textContent = "";
+    dashboardTickets = ticketResult.tickets || [];
+    renderTickets();
+    setDashboardMessage("");
   } catch (error) {
     dashboardStatus.textContent = error.message;
     dashboardStatus.className = "dashboard-status dashboard-status-error";
@@ -230,6 +374,13 @@ rangeButtons.forEach((button) => {
     selectedDays = Number(button.dataset.days);
     rangeButtons.forEach((item) => item.classList.toggle("active", item === button));
     loadStats();
+  });
+});
+
+ticketViewButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    selectedTicketView = button.dataset.ticketView;
+    renderTickets();
   });
 });
 

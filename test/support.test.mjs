@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { isAllowedOrigin, sendSupportEmails, validateSupportSubmission } from "../lib/support.mjs";
+import { isAllowedOrigin, sendSupportEmails, sendTicketReply, validateSupportSubmission, validateTicketReply } from "../lib/support.mjs";
 
 const validSubmission = {
   name: "River Samsel",
@@ -102,4 +102,38 @@ test("fails safely when Resend is not configured", async () => {
   const result = await sendSupportEmails(validSubmission, "B4829173056", {});
   assert.equal(result.ok, false);
   assert.equal(result.status, 503);
+});
+
+test("validates and sends a branded dashboard reply", async () => {
+  assert.equal(validateTicketReply({ message: "", requestId: validSubmission.requestId }).ok, false);
+  assert.equal(validateTicketReply({ message: "Thanks!", requestId: "short" }).ok, false);
+  const validation = validateTicketReply({ message: "Here is your update.", requestId: validSubmission.requestId });
+  assert.equal(validation.ok, true);
+
+  const requests = [];
+  const result = await sendTicketReply({
+    ticketId: "B4829173056",
+    name: validSubmission.name,
+    email: validSubmission.email,
+    project: validSubmission.project,
+    topic: validSubmission.topic,
+  }, validation.reply, {
+    RESEND_API_KEY: "re_test",
+    SUPPORT_FROM_EMAIL: "Broadway Pixels Support <support@mail.broadwaypixels.com>",
+    SUPPORT_TO_EMAIL: "Media@BroadwayPixels.com",
+  }, async (url, options) => {
+    requests.push({ url, options });
+    return { ok: true, json: async () => ({ id: "email_reply" }) };
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.id, "email_reply");
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].options.headers["Idempotency-Key"], `support-reply-B4829173056-${validSubmission.requestId}`);
+  const payload = JSON.parse(requests[0].options.body);
+  assert.equal(payload.to[0], validSubmission.email);
+  assert.equal(payload.reply_to, "Media@BroadwayPixels.com");
+  assert.match(payload.subject, /^\[B4829173056\] Re:/);
+  assert.match(payload.html, /A reply from Broadway Pixels/);
+  assert.match(payload.html, /broadway-pixels-logo-v2\.png/);
 });

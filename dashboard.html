@@ -9,9 +9,9 @@
     <link rel="icon" type="image/png" sizes="512x512" href="/assets/broadway-pixels-favicon.png?v=20260722-2" />
     <link rel="apple-touch-icon" href="/assets/broadway-pixels-favicon.png?v=20260722-2" />
     <script src="/theme.js?v=20260722-2"></script>
-    <link rel="stylesheet" href="/styles.css?v=20260722-17" />
+    <link rel="stylesheet" href="/styles.css?v=20260723-1" />
     <script src="/script.js?v=20260722-7" defer></script>
-    <script src="/dashboard.js?v=20260722-2" defer></script>
+    <script src="/dashboard.js?v=20260723-1" defer></script>
   </head>
   <body class="dashboard-page">
     <a class="skip-link" href="#main">Skip to dashboard</a>
@@ -69,8 +69,12 @@
 
         <section class="dashboard-panel dashboard-tickets" aria-labelledby="tickets-title">
           <div class="dashboard-panel-heading dashboard-ticket-heading">
-            <div><h2 id="tickets-title">Support tickets</h2><p>Messages submitted through BroadwayPixels.com</p></div>
+            <div><h2 id="tickets-title">Support tickets</h2><p>Reply, archive, or remove messages submitted through BroadwayPixels.com.</p></div>
             <strong id="ticket-count">0 tickets</strong>
+          </div>
+          <div class="ticket-filters" aria-label="Filter support tickets">
+            <button class="active" type="button" data-ticket-view="open">Open <span id="open-ticket-count">0</span></button>
+            <button type="button" data-ticket-view="archived">Archived <span id="archived-ticket-count">0</span></button>
           </div>
           <div id="ticket-list" class="ticket-list"></div>
         </section>

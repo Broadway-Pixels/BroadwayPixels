@@ -29,3 +29,30 @@ test("stores private support tickets newest first", async () => {
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("archives, restores, records replies, and permanently deletes tickets", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "broadway-ticket-actions-"));
+  try {
+    const store = new TicketStore(directory);
+    const ticketId = "B0000000042";
+    await store.record({ ticketId, topic: "Manage me", status: "open" }, new Date("2026-07-23T12:00:00.000Z"));
+
+    assert.equal(await store.archive(ticketId, true, new Date("2026-07-23T12:05:00.000Z")), true);
+    assert.equal((await store.get(ticketId)).status, "archived");
+    assert.equal((await store.list(10, { status: "open" })).length, 0);
+    assert.equal((await store.list(10, { status: "archived" })).length, 1);
+
+    assert.equal(await store.archive(ticketId, false, new Date("2026-07-23T12:06:00.000Z")), true);
+    await store.recordReply(ticketId, { message: "A dashboard reply", emailId: "email_42" }, new Date("2026-07-23T12:07:00.000Z"));
+    const replied = await store.get(ticketId);
+    assert.equal(replied.status, "open");
+    assert.equal(replied.replies.length, 1);
+    assert.equal(replied.replies[0].emailId, "email_42");
+
+    assert.equal(await store.remove(ticketId), true);
+    assert.equal(await store.get(ticketId), null);
+    assert.equal(await store.remove(ticketId), false);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});

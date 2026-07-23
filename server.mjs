@@ -13,7 +13,7 @@ import {
   verifyDashboardSession,
 } from "./lib/dashboard-auth.mjs";
 import { resolvePublicRequest } from "./lib/routes.mjs";
-import { isAllowedOrigin, sendSupportEmails, validateSupportSubmission } from "./lib/support.mjs";
+import { isAllowedOrigin, sendSupportEmails, sendTicketReply, validateSupportSubmission, validateTicketReply } from "./lib/support.mjs";
 import { createTicketId, TicketStore } from "./lib/tickets.mjs";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
@@ -21,6 +21,7 @@ const port = Number(process.env.PORT || 8080);
 const supportAttempts = new Map();
 const analyticsAttempts = new Map();
 const loginAttempts = new Map();
+const dashboardActionAttempts = new Map();
 const analyticsStore = new AnalyticsStore(process.env.ANALYTICS_DATA_DIR || join(root, "data", "analytics"));
 const ticketStore = new TicketStore(process.env.SUPPORT_DATA_DIR || join(root, "data", "tickets"));
 const mimeTypes = {
@@ -170,7 +171,7 @@ async function handleDashboardTickets(request, response, url) {
   if (!dashboardAuthorized(request)) return json(response, 401, { message: "Sign in to view support tickets." });
   try {
     const limit = Math.min(250, Math.max(1, Number(url.searchParams.get("limit")) || 100));
-    const tickets = (await ticketStore.list(limit)).map((ticket) => ({
+    const tickets = (await ticketStore.list(limit, { status: "all" })).map((ticket) => ({
       ticketId: ticket.ticketId,
       name: ticket.name,
       email: ticket.email,
@@ -180,11 +181,58 @@ async function handleDashboardTickets(request, response, url) {
       link: ticket.link,
       confirmationSent: ticket.confirmationSent,
       createdAt: ticket.createdAt,
+      status: ticket.status === "archived" ? "archived" : "open",
+      replyCount: Array.isArray(ticket.replies) ? ticket.replies.length : 0,
+      lastRepliedAt: Array.isArray(ticket.replies) ? ticket.replies.at(-1)?.sentAt || "" : "",
     }));
     return json(response, 200, { tickets, generatedAt: new Date().toISOString() });
   } catch (error) {
     console.error("Dashboard tickets failed", error);
     return json(response, 500, { message: "Support tickets are temporarily unavailable." });
+  }
+}
+
+async function handleDashboardTicketAction(request, response, ticketId, action) {
+  if (!dashboardAuthorized(request)) return json(response, 401, { message: "Sign in to manage support tickets." });
+  if (!request.headers.origin || !isAllowedOrigin(request.headers, process.env.ALLOWED_ORIGINS)) return json(response, 403, { message: "Request origin is not allowed." });
+  if (isRateLimited(dashboardActionAttempts, clientAddress(request), 40, 10 * 60 * 1000)) return json(response, 429, { message: "Too many dashboard actions. Try again in a few minutes." });
+
+  try {
+    const ticket = await ticketStore.get(ticketId);
+    if (!ticket) return json(response, 404, { message: "Ticket not found." });
+
+    if (action === "delete") {
+      if (request.method !== "DELETE") return json(response, 405, { message: "Method not allowed." });
+      await ticketStore.remove(ticketId);
+      return json(response, 200, { deleted: true, ticketId });
+    }
+
+    if (request.method !== "POST") return json(response, 405, { message: "Method not allowed." });
+    if (action === "archive" || action === "unarchive") {
+      await ticketStore.archive(ticketId, action === "archive");
+      return json(response, 200, { ticketId, status: action === "archive" ? "archived" : "open" });
+    }
+
+    if (action === "reply") {
+      if (!String(request.headers["content-type"] || "").startsWith("application/json")) return json(response, 415, { message: "Content type must be application/json." });
+      let body;
+      try {
+        body = await readJson(request);
+      } catch {
+        return json(response, 400, { message: "Request body must be valid JSON." });
+      }
+      const validation = validateTicketReply(body);
+      if (!validation.ok) return json(response, 422, { message: validation.message });
+      const result = await sendTicketReply(ticket, validation.reply, process.env);
+      if (!result.ok) return json(response, result.status, { message: result.message });
+      await ticketStore.recordReply(ticketId, { message: validation.reply.message, emailId: result.id });
+      return json(response, 200, { message: "Reply sent.", ticketId, repliedAt: new Date().toISOString() });
+    }
+
+    return json(response, 404, { message: "Ticket action not found." });
+  } catch (error) {
+    console.error(`Dashboard ticket ${action} failed`, error);
+    return json(response, 500, { message: "The ticket could not be updated." });
   }
 }
 
@@ -202,6 +250,8 @@ function handleDashboardSession(request, response) {
 
 createServer(async (request, response) => {
   const url = new URL(request.url, `http://${request.headers.host || "localhost"}`);
+  const ticketAction = url.pathname.match(/^\/api\/dashboard\/tickets\/(B\d{10})(?:\/(reply|archive|unarchive))?$/);
+  if (ticketAction) return handleDashboardTicketAction(request, response, ticketAction[1], ticketAction[2] || "delete");
   if (url.pathname === "/api/support") return handleSupport(request, response);
   if (url.pathname === "/api/analytics/view") return handleAnalytics(request, response);
   if (url.pathname === "/api/dashboard/login") return handleDashboardLogin(request, response);

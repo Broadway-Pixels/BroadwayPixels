@@ -15,7 +15,7 @@ test("every public page loads the early theme and offers a theme control", async
   pages.forEach((page) => {
     assert.match(page, /<script src="\/theme\.js\?v=20260722-2"><\/script>/);
     assert.match(page, /data-theme-toggle/);
-    assert.match(page, /script\.js\?v=20260722-7/);
+    assert.match(page, /script\.js\?v=20260724-1/);
   });
 });
 

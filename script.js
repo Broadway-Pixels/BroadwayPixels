@@ -61,7 +61,8 @@ function trafficSource() {
   if (!document.referrer) return "direct";
   try {
     const referrer = new URL(document.referrer);
-    return referrer.hostname === window.location.hostname ? "internal" : referrer.hostname.toLowerCase();
+    const hostname = referrer.hostname.toLowerCase();
+    return hostname === "broadwaypixels.com" || hostname.endsWith(".broadwaypixels.com") ? "internal" : hostname;
   } catch {
     return "direct";
   }

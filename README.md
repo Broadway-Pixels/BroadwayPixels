@@ -18,6 +18,8 @@ Then open `http://localhost:8080`.
 - `/projects`: apps, games, and software projects
 - `/support`: single form for project support, collaborations, press, and general questions
 - `/dashboard`: private dashboard for replying to, archiving, restoring, and deleting support tickets plus page views, sessions, sources, devices, and recent activity
+- `/privacy`: public Tanktopia privacy policy used by the store metadata handoff
+- `/tanktopia/eula`: public Tanktopia end user license agreement used by the store metadata handoff
 - The server maps these clean URLs to the static HTML templates and redirects legacy `.html` links.
 - `styles.css`: complete responsive design system
 - `theme.js`: early time-based theme selection with light, dark, and automatic visitor controls

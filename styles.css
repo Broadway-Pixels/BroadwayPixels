@@ -301,9 +301,9 @@
   .support-aside h2 { max-width: 13ch; font-size: clamp(2rem, 3vw, 3rem); }
   .support-note { padding-block: 22px; border-bottom: 1px solid rgb(220 234 255 / .35); }
   .support-note strong { color: white; font-size: 1.05rem; }
-  .support-note p { margin-top: 6px; color: var(--blue-soft); }
+  .support-note p { margin-top: 6px; color: #eaf2ff; }
   .support-email-block { padding-top: 28px; }
-  .support-email-block p { color: var(--blue-soft); }
+  .support-email-block p { color: #eaf2ff; }
   .support-email-block a { display: inline-block; margin-top: 5px; color: white; font-weight: 850; overflow-wrap: anywhere; text-underline-offset: 4px; }
 
   .dashboard-page { min-height: 100dvh; background: var(--paper); }
@@ -394,6 +394,7 @@
   .dashboard-empty { color: var(--muted); }
 
   html[data-theme="dark"] .support-form-wrap { background: #0d1d3d; box-shadow: 0 22px 60px rgb(0 0 0 / .22); }
+  html[data-theme="dark"] .support-aside { background: #12366f; border-color: #4d83de; }
   html[data-theme="dark"] .form-field input,
   html[data-theme="dark"] .form-field select,
   html[data-theme="dark"] .form-field textarea { border-color: #5576a6; background: #091831; }

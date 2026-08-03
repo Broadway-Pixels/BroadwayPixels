@@ -5,7 +5,7 @@ import { isAllowedOrigin, sendSupportEmails, sendTicketReply, validateSupportSub
 const validSubmission = {
   name: "River Samsel",
   email: "river@example.com",
-  project: "Vidioza",
+  project: "Projects",
   topic: "Export will not finish",
   message: "The export stays at the final step every time I try it.",
   link: "https://example.com/project/123",
@@ -17,12 +17,11 @@ test("validates a complete project support request", () => {
   const result = validateSupportSubmission(validSubmission);
   assert.equal(result.ok, true);
   assert.equal(result.submission.email, "river@example.com");
-  assert.equal(validateSupportSubmission({ ...validSubmission, project: "KixKan" }).ok, true);
-  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Pixelated" }).ok, true);
+  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Projects" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Music" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Content" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Partnerships" }).ok, true);
-  assert.equal(validateSupportSubmission({ ...validSubmission, project: "General question", topic: "Music collaboration" }).ok, true);
+  assert.equal(validateSupportSubmission({ ...validSubmission, project: "General", topic: "Music collaboration" }).ok, true);
 });
 
 test("rejects unknown projects and short messages", () => {
@@ -30,6 +29,7 @@ test("rejects unknown projects and short messages", () => {
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "ResellOps" }).ok, false);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Shop Market Deals" }).ok, false);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Website" }).ok, false);
+  assert.equal(validateSupportSubmission({ ...validSubmission, project: "KixKan" }).ok, false);
   assert.equal(validateSupportSubmission({ ...validSubmission, message: "Too short" }).ok, false);
 });
 

@@ -34,6 +34,15 @@ test("projects page includes the Pixelated Discord bot", async () => {
   assert.match(projects, /A Discord bot for moderation logs, community commands, XP, and custom rank cards\./);
 });
 
+test("support page answers common music and AI questions", async () => {
+  const support = await readFile(new URL("../support.html", import.meta.url), "utf8");
+  assert.match(support, /<h2 id="faq-title">Frequently Asked Questions<\/h2>/);
+  assert.match(support, /Is any of your music made with AI\?/);
+  assert.match(support, /I do not use AI to create my music\./);
+  assert.match(support, /AI is used in some software projects and video workflows, but never to make the songs\./);
+  assert.match(support, /"@type": "FAQPage"/);
+});
+
 test("Tanktopia legal pages disclose current local behavior and user data routes", async () => {
   const privacy = await readFile(new URL("../privacy.html", import.meta.url), "utf8");
   const eula = await readFile(new URL("../tanktopia-eula.html", import.meta.url), "utf8");

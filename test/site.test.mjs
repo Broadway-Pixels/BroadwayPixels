@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const publicPages = ["index.html", "music.html", "content.html", "projects.html", "support.html", "privacy.html", "tanktopia-eula.html"];
+const publicPages = ["index.html", "music.html", "content.html", "projects.html", "support.html", "faq.html", "privacy.html", "tanktopia-eula.html"];
 
 test("homepage uses the Broadway Pixels creator and developer SEO title", async () => {
   const homepage = await readFile(new URL("../index.html", import.meta.url), "utf8");
@@ -34,13 +34,24 @@ test("projects page includes the Pixelated Discord bot", async () => {
   assert.match(projects, /A Discord bot for moderation logs, community commands, XP, and custom rank cards\./);
 });
 
-test("support page answers common music and AI questions", async () => {
+test("FAQ page answers common music and AI questions", async () => {
+  const faq = await readFile(new URL("../faq.html", import.meta.url), "utf8");
   const support = await readFile(new URL("../support.html", import.meta.url), "utf8");
-  assert.match(support, /<h2 id="faq-title">Frequently Asked Questions<\/h2>/);
-  assert.match(support, /Is any of your music made with AI\?/);
-  assert.match(support, /I do not use AI to create my music\./);
-  assert.match(support, /AI is used in some software projects and video workflows, but never to make the songs\./);
-  assert.match(support, /"@type": "FAQPage"/);
+  assert.match(faq, /<h1>Questions, answered\.<\/h1>/);
+  assert.match(faq, /Is any of your music made with AI\?/);
+  assert.match(faq, /Every Broadway Pixels release is written, arranged, produced, and finished by myself\./);
+  assert.match(faq, /AI is used in some software projects and video workflows, but never to make the songs\./);
+  assert.match(faq, /"@type": "FAQPage"/);
+  assert.doesNotMatch(support, /<section class="faq-section"/);
+});
+
+test("every public page offers Contact and FAQ under Support", async () => {
+  const pages = await Promise.all(publicPages.map((file) => readFile(new URL(`../${file}`, import.meta.url), "utf8")));
+  pages.forEach((page) => {
+    assert.match(page, /<details class="nav-group">/);
+    assert.match(page, /href="\/support"[^>]*>Contact<\/a>/);
+    assert.match(page, /href="\/faq"[^>]*>FAQ<\/a>/);
+  });
 });
 
 test("Tanktopia legal pages disclose current local behavior and user data routes", async () => {

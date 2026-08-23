@@ -39,7 +39,8 @@ test("FAQ page answers common music and AI questions", async () => {
   const support = await readFile(new URL("../support.html", import.meta.url), "utf8");
   assert.match(faq, /<h1>Questions, answered\.<\/h1>/);
   assert.match(faq, /Is any of your music made with AI\?/);
-  assert.match(faq, /Every Broadway Pixels release is written, arranged, produced, and finished by myself\./);
+  assert.match(faq, /Every release is written, arranged, produced, and finished by myself\./);
+  assert.doesNotMatch(faq, /Every Broadway Pixels release/);
   assert.match(faq, /AI is used in some software projects and video workflows, but never to make the songs\./);
   assert.match(faq, /"@type": "FAQPage"/);
   assert.doesNotMatch(support, /<section class="faq-section"/);

@@ -52,6 +52,7 @@ test("every public page offers Contact and FAQ under Support", async () => {
     assert.match(page, /<details class="nav-group">/);
     assert.match(page, /href="\/support"[^>]*>Contact<\/a>/);
     assert.match(page, /href="\/faq"[^>]*>FAQ<\/a>/);
+    assert.ok(page.indexOf('href="/faq"') < page.indexOf('href="/support"'));
   });
 });
 

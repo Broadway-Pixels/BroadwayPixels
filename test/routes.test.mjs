@@ -12,6 +12,8 @@ test("serves clean public page routes from the existing HTML templates", () => {
   assert.deepEqual(resolvePublicRequest("/dashboard"), { type: "file", file: "/dashboard.html" });
   assert.deepEqual(resolvePublicRequest("/privacy"), { type: "file", file: "/privacy.html" });
   assert.deepEqual(resolvePublicRequest("/tanktopia/eula"), { type: "file", file: "/tanktopia-eula.html" });
+  assert.deepEqual(resolvePublicRequest("/steady/privacy"), { type: "file", file: "/steady-privacy.html" });
+  assert.deepEqual(resolvePublicRequest("/steady/terms"), { type: "file", file: "/steady-terms.html" });
 });
 
 test("redirects legacy HTML and trailing-slash URLs", () => {
@@ -25,6 +27,10 @@ test("redirects legacy HTML and trailing-slash URLs", () => {
   assert.deepEqual(resolvePublicRequest("/tanktopia-eula.html"), { type: "redirect", location: "/tanktopia/eula" });
   assert.deepEqual(resolvePublicRequest("/privacy/"), { type: "redirect", location: "/privacy" });
   assert.deepEqual(resolvePublicRequest("/tanktopia/eula/"), { type: "redirect", location: "/tanktopia/eula" });
+  assert.deepEqual(resolvePublicRequest("/steady-privacy.html"), { type: "redirect", location: "/steady/privacy" });
+  assert.deepEqual(resolvePublicRequest("/steady-terms.html"), { type: "redirect", location: "/steady/terms" });
+  assert.deepEqual(resolvePublicRequest("/steady/privacy/"), { type: "redirect", location: "/steady/privacy" });
+  assert.deepEqual(resolvePublicRequest("/steady/terms/"), { type: "redirect", location: "/steady/terms" });
 });
 
 test("leaves asset and unknown paths for the public-file allowlist", () => {

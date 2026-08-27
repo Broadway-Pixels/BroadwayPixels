@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const publicPages = ["index.html", "music.html", "content.html", "projects.html", "support.html", "faq.html", "privacy.html", "tanktopia-eula.html"];
+const publicPages = ["index.html", "music.html", "content.html", "projects.html", "support.html", "faq.html", "privacy.html", "tanktopia-eula.html", "steady-privacy.html", "steady-terms.html"];
 
 test("homepage uses the Broadway Pixels creator and developer SEO title", async () => {
   const homepage = await readFile(new URL("../index.html", import.meta.url), "utf8");
@@ -69,6 +69,25 @@ test("Tanktopia legal pages disclose current local behavior and user data routes
   assert.match(privacy, /export|delete/i);
   assert.match(privacy, /does not forward analytics|forwarding is disabled/i);
   assert.match(eula, /in-development/i);
+});
+
+test("Steady legal pages disclose wellness, Coach, subscription, and data-request boundaries", async () => {
+  const privacy = await readFile(new URL("../steady-privacy.html", import.meta.url), "utf8");
+  const terms = await readFile(new URL("../steady-terms.html", import.meta.url), "utf8");
+  for (const page of [privacy, terms]) {
+    assert.match(page, /Last updated 2026-08-27/);
+    assert.match(page, /support@broadwaypixels\.com/);
+    assert.match(page, /not (?:a medical service|medical care)/i);
+    assert.match(page, /Steady privacy policy|Privacy policy/i);
+  }
+  assert.match(privacy, /Supabase/);
+  assert.match(privacy, /OpenAI/);
+  assert.match(privacy, /RevenueCat/);
+  assert.match(privacy, /Health data will not be used for advertising/);
+  assert.match(privacy, /access, correction, export, or deletion/i);
+  assert.match(terms, /automatically renewing monthly or yearly subscription/i);
+  assert.match(terms, /Deleting Steady or your Steady account does not automatically cancel/i);
+  assert.match(terms, /does not guarantee a particular amount or rate of weight change/i);
 });
 
 test("dashboard stays out of search and public analytics", async () => {

@@ -20,6 +20,8 @@ Then open `http://localhost:8080`.
 - `/dashboard`: private dashboard for replying to, archiving, restoring, and deleting support tickets plus page views, sessions, sources, devices, and recent activity
 - `/privacy`: public Tanktopia privacy policy used by the store metadata handoff
 - `/tanktopia/eula`: public Tanktopia end user license agreement used by the store metadata handoff
+- `/steady/privacy`: public Steady privacy policy for account sync, wellness data, AI coaching, subscriptions, and ads
+- `/steady/terms`: public Steady terms of use and subscription terms
 - The server maps these clean URLs to the static HTML templates and redirects legacy `.html` links.
 - `styles.css`: complete responsive design system
 - `theme.js`: early time-based theme selection with light, dark, and automatic visitor controls

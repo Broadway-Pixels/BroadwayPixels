@@ -34,6 +34,15 @@ test("projects page includes the Pixelated Discord bot", async () => {
   assert.match(projects, /A Discord bot for moderation logs, community commands, XP, and custom rank cards\./);
 });
 
+test("projects page includes the Steady fitness app", async () => {
+  const projects = await readFile(new URL("../projects.html", import.meta.url), "utf8");
+  assert.match(projects, /id="steady"/);
+  assert.match(projects, /<h2>Steady<\/h2>/);
+  assert.match(projects, /mobile fitness and weight-management coach/);
+  assert.match(projects, /assets\/steady-app-icon\.png/);
+  assert.match(projects, /Steady fitness and weight-management app icon/);
+});
+
 test("FAQ page answers common music and AI questions", async () => {
   const faq = await readFile(new URL("../faq.html", import.meta.url), "utf8");
   const support = await readFile(new URL("../support.html", import.meta.url), "utf8");

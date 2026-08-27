@@ -85,6 +85,8 @@ test("Steady legal pages disclose wellness, Coach, subscription, and data-reques
   assert.match(privacy, /RevenueCat/);
   assert.match(privacy, /Health data will not be used for advertising/);
   assert.match(privacy, /access, correction, export, or deletion/i);
+  assert.match(privacy, /Settings &gt; Data &amp; Privacy &gt; Delete account and data/);
+  assert.match(privacy, /does not cancel a store subscription/);
   assert.match(terms, /automatically renewing monthly or yearly subscription/i);
   assert.match(terms, /Deleting Steady or your Steady account does not automatically cancel/i);
   assert.match(terms, /does not guarantee a particular amount or rate of weight change/i);

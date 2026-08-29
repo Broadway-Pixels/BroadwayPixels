@@ -5,19 +5,19 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { constantTimeMatch, createOAuthRequest, exchangeAuthorizationCode, fetchVehicles, refreshAccessToken, normalizeWebhook } from './server/bouncie.mjs';
-import { FleetbaseStore } from './server/store.mjs';
+import { FleeterbaseStore } from './server/store.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.join(root, 'dist');
 const port = Number(process.env.PORT || 4173);
 const isProduction = process.env.NODE_ENV === 'production';
-const sessionCookie = 'fleetbase_owner';
+const sessionCookie = 'fleeterbase_owner';
 const config = {
-  ownerEmail: String(process.env.FLEETBASE_OWNER_EMAIL || '').trim().toLowerCase(),
-  ownerPassword: String(process.env.FLEETBASE_OWNER_PASSWORD || ''),
-  sessionSecret: String(process.env.FLEETBASE_SESSION_SECRET || ''),
-  dataDirectory: process.env.FLEETBASE_DATA_DIR || path.join(root, '.data'),
-  encryptionKey: process.env.FLEETBASE_TOKEN_ENCRYPTION_KEY || '',
+  ownerEmail: String(process.env.FLEETERBASE_OWNER_EMAIL || process.env.FLEETBASE_OWNER_EMAIL || '').trim().toLowerCase(),
+  ownerPassword: String(process.env.FLEETERBASE_OWNER_PASSWORD || process.env.FLEETBASE_OWNER_PASSWORD || ''),
+  sessionSecret: String(process.env.FLEETERBASE_SESSION_SECRET || process.env.FLEETBASE_SESSION_SECRET || ''),
+  dataDirectory: process.env.FLEETERBASE_DATA_DIR || process.env.FLEETBASE_DATA_DIR || path.join(root, '.data'),
+  encryptionKey: process.env.FLEETERBASE_TOKEN_ENCRYPTION_KEY || process.env.FLEETBASE_TOKEN_ENCRYPTION_KEY || '',
   bouncie: {
     clientId: String(process.env.BOUNCIE_CLIENT_ID || ''),
     clientSecret: String(process.env.BOUNCIE_CLIENT_SECRET || ''),
@@ -27,17 +27,17 @@ const config = {
 };
 
 const missingCore = [
-  ['FLEETBASE_OWNER_EMAIL', config.ownerEmail],
-  ['FLEETBASE_OWNER_PASSWORD', config.ownerPassword],
-  ['FLEETBASE_SESSION_SECRET', config.sessionSecret.length >= 32],
-  ['FLEETBASE_TOKEN_ENCRYPTION_KEY', config.encryptionKey],
+  ['FLEETERBASE_OWNER_EMAIL', config.ownerEmail],
+  ['FLEETERBASE_OWNER_PASSWORD', config.ownerPassword],
+  ['FLEETERBASE_SESSION_SECRET', config.sessionSecret.length >= 32],
+  ['FLEETERBASE_TOKEN_ENCRYPTION_KEY', config.encryptionKey],
 ].filter(([, value]) => !value).map(([name]) => name);
 if (missingCore.length) {
-  console.error(`Fleetbase server configuration missing: ${missingCore.join(', ')}`);
+  console.error(`Fleeterbase server configuration missing: ${missingCore.join(', ')}`);
   process.exit(1);
 }
 
-const store = new FleetbaseStore(config.dataDirectory, config.encryptionKey);
+const store = new FleeterbaseStore(config.dataDirectory, config.encryptionKey);
 await store.init();
 const loginAttempts = new Map();
 
@@ -58,7 +58,7 @@ function signSession(payload) {
 }
 
 function validSession(request) {
-  const token = cookies(request)[sessionCookie];
+  const requestCookies = cookies(request), token = requestCookies[sessionCookie] || requestCookies.fleetbase_owner;
   if (!token) return false;
   const [encoded, signature] = token.split('.');
   if (!encoded || !signature) return false;
@@ -76,7 +76,10 @@ function setSessionHeader(request) {
   return `${sessionCookie}=${encodeURIComponent(token)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200${isProduction || request.headers['x-forwarded-proto'] === 'https' ? '; Secure' : ''}`;
 }
 
-function clearSessionHeader() { return `${sessionCookie}=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${isProduction ? '; Secure' : ''}`; }
+function clearSessionHeader() {
+  const suffix = `; HttpOnly; SameSite=Lax; Path=/; Max-Age=0${isProduction ? '; Secure' : ''}`;
+  return [`${sessionCookie}=${suffix}`, `fleetbase_owner=${suffix}`];
+}
 
 async function body(request, maximum = 1_000_000) {
   let raw = '';
@@ -210,7 +213,7 @@ async function staticFile(request, response, url) {
   try { if ((await stat(target)).isDirectory()) target = path.join(target, 'index.html'); }
   catch { target = path.join(dist, 'index.html'); }
   try { await access(target); }
-  catch { return json(response, 503, { error: 'Fleetbase has not been built. Run npm run build first.' }); }
+  catch { return json(response, 503, { error: 'Fleeterbase has not been built. Run npm run build first.' }); }
   response.writeHead(200, {
     'content-type': mime[path.extname(target)] || 'application/octet-stream',
     'x-content-type-options': 'nosniff',
@@ -235,4 +238,4 @@ const server = http.createServer(async (request, response) => {
   }
 });
 
-server.listen(port, () => console.log(`Fleetbase listening on http://127.0.0.1:${port}`));
+server.listen(port, () => console.log(`Fleeterbase listening on http://127.0.0.1:${port}`));

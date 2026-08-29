@@ -4,10 +4,10 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { createOAuthRequest, fetchVehicles, normalizeWebhook, refreshAccessToken } from '../server/bouncie.mjs';
-import { FleetbaseStore } from '../server/store.mjs';
+import { FleeterbaseStore } from '../server/store.mjs';
 
 test('Bouncie authorization uses state and S256 PKCE', () => {
-  const request = createOAuthRequest({ clientId: 'fleetbase-test', redirectUri: 'https://fleet.example/callback' });
+  const request = createOAuthRequest({ clientId: 'fleeterbase-test', redirectUri: 'https://fleet.example/callback' });
   const url = new URL(request.url);
   assert.equal(url.origin + url.pathname, 'https://auth.bouncie.com/dialog/authorize');
   assert.equal(url.searchParams.get('state'), request.state);
@@ -51,9 +51,9 @@ test('webhook normalization accepts Bouncie tripData GPS payloads and arrays', (
 });
 
 test('store encrypts tokens, deduplicates webhooks, and resolves mappings at read time', async t => {
-  const directory = await mkdtemp(path.join(os.tmpdir(), 'fleetbase-store-'));
+  const directory = await mkdtemp(path.join(os.tmpdir(), 'fleeterbase-store-'));
   t.after(() => rm(directory, { recursive: true, force: true }));
-  const store = new FleetbaseStore(directory, Buffer.alloc(32, 7).toString('base64'));
+  const store = new FleeterbaseStore(directory, Buffer.alloc(32, 7).toString('base64'));
   await store.init();
   await store.saveTokens({ accessToken: 'secret-access', refreshToken: 'secret-refresh', expiresAt: '2099-01-01T00:00:00Z' });
   const disk = await readFile(path.join(directory, 'bouncie-tokens.enc.json'), 'utf8');

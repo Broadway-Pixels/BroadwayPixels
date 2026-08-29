@@ -5,7 +5,7 @@ import path from 'node:path';
 function encryptionKey(value) {
   const input = String(value || '').trim();
   const buffer = /^[a-f0-9]{64}$/i.test(input) ? Buffer.from(input, 'hex') : Buffer.from(input, 'base64');
-  if (buffer.length !== 32) throw new Error('FLEETBASE_TOKEN_ENCRYPTION_KEY must be 32 bytes (base64) or 64 hex characters.');
+  if (buffer.length !== 32) throw new Error('FLEETERBASE_TOKEN_ENCRYPTION_KEY must be 32 bytes (base64) or 64 hex characters.');
   return buffer;
 }
 
@@ -14,7 +14,7 @@ async function readJson(file, fallback) {
   catch (error) { if (error.code === 'ENOENT') return fallback; throw error; }
 }
 
-export class FleetbaseStore {
+export class FleeterbaseStore {
   constructor(directory, key) {
     this.directory = directory;
     this.key = encryptionKey(key);

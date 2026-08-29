@@ -125,18 +125,20 @@ export async function clearLoginAttempt(env: WorkerEnv, remote: string): Promise
   await env.DB.prepare('DELETE FROM login_attempts WHERE remote_address = ?').bind(remote).run();
 }
 
-export async function getMappings(env: WorkerEnv): Promise<Array<{ vehicleId: string; providerKeys: string[] }>> {
-  const rows = await env.DB.prepare('SELECT provider_key, vehicle_id FROM bouncie_mappings ORDER BY vehicle_id, provider_key').all<MappingRow>();
+export async function getMappings(env: WorkerEnv, userId: string): Promise<Array<{ vehicleId: string; providerKeys: string[] }>> {
+  const rows = await env.DB.prepare(`SELECT provider_key, vehicle_id FROM bouncie_user_mappings
+    WHERE user_id = ? ORDER BY vehicle_id, provider_key`).bind(userId).all<MappingRow>();
   const grouped = new Map<string, string[]>();
   for (const row of rows.results) grouped.set(row.vehicle_id, [...(grouped.get(row.vehicle_id) || []), row.provider_key]);
   return [...grouped].map(([vehicleId, providerKeys]) => ({ vehicleId, providerKeys }));
 }
 
-export async function saveMappings(env: WorkerEnv, mappings: Array<{ vehicleId: string; providerKeys: string[] }>): Promise<void> {
-  const statements: D1PreparedStatement[] = [env.DB.prepare('DELETE FROM bouncie_mappings')];
+export async function saveMappings(env: WorkerEnv, userId: string, mappings: Array<{ vehicleId: string; providerKeys: string[] }>): Promise<void> {
+  const statements: D1PreparedStatement[] = [env.DB.prepare('DELETE FROM bouncie_user_mappings WHERE user_id = ?').bind(userId)];
   const updatedAt = nowIso();
   for (const mapping of mappings) {
-    for (const key of mapping.providerKeys) statements.push(env.DB.prepare('INSERT INTO bouncie_mappings (provider_key, vehicle_id, updated_at) VALUES (?, ?, ?)').bind(key, mapping.vehicleId, updatedAt));
+    for (const key of mapping.providerKeys) statements.push(env.DB.prepare(`INSERT INTO bouncie_user_mappings
+      (user_id, provider_key, vehicle_id, updated_at) VALUES (?, ?, ?, ?)`).bind(userId, key, mapping.vehicleId, updatedAt));
   }
   await env.DB.batch(statements);
 }
@@ -167,15 +169,23 @@ function parseKeys(value: string): string[] {
   } catch { return []; }
 }
 
-export async function listLocations(env: WorkerEnv, since: string, limit: number): Promise<Array<LocationPoint & { vehicleId: string }>> {
+export async function listLocations(env: WorkerEnv, userId: string, since: string, limit: number): Promise<Array<LocationPoint & { vehicleId: string }>> {
   const rows = await env.DB.prepare(`SELECT id, event_id, provider_keys, latitude, longitude, speed, address, recorded_at, source, event_type
     FROM locations WHERE recorded_at > ? ORDER BY recorded_at DESC LIMIT ?`).bind(since || '', limit).all<LocationRow>();
-  const mappings = await env.DB.prepare('SELECT provider_key, vehicle_id FROM bouncie_mappings').all<MappingRow>();
+  const mappings = await env.DB.prepare('SELECT provider_key, vehicle_id FROM bouncie_user_mappings WHERE user_id = ?').bind(userId).all<MappingRow>();
   const byKey = new Map(mappings.results.map(row => [row.provider_key, row.vehicle_id]));
   return rows.results.reverse().map(row => {
     const providerKeys = parseKeys(row.provider_keys), vehicleId = providerKeys.map(key => byKey.get(key)).find(Boolean);
     return vehicleId ? { id: row.id, providerKeys, vehicleId, latitude: row.latitude, longitude: row.longitude, speed: row.speed, address: row.address, recordedAt: row.recorded_at, source: row.source, eventType: row.event_type } : null;
   }).filter((point): point is LocationPoint & { vehicleId: string } => point !== null);
+}
+
+export async function latestMappedLocationStatus(env: WorkerEnv, userId: string): Promise<{ lastEventAt: string; lastEventType: string } | null> {
+  const row = await env.DB.prepare(`SELECT locations.recorded_at, locations.event_type FROM locations
+    JOIN bouncie_user_mappings ON bouncie_user_mappings.user_id = ?
+      AND (locations.provider_keys LIKE '%"' || bouncie_user_mappings.provider_key || '"%')
+    ORDER BY locations.recorded_at DESC LIMIT 1`).bind(userId).first<{ recorded_at: string; event_type: string }>();
+  return row ? { lastEventAt: row.recorded_at, lastEventType: row.event_type } : null;
 }
 
 export async function pruneReceipts(env: WorkerEnv): Promise<void> {

@@ -14,9 +14,7 @@ async function request(path, options = {}) {
 }
 
 export const bouncieApi = {
-  session: () => request('/api/session'),
-  signIn: (email, password) => request('/api/session', { method: 'POST', body: JSON.stringify({ email, password }) }),
-  signOut: () => request('/api/session', { method: 'DELETE' }),
+  session: () => request('/api/auth/session'),
   status: () => request('/api/bouncie/status'),
   vehicles: () => request('/api/bouncie/vehicles'),
   locations: since => request(`/api/bouncie/locations?limit=1000${since ? `&since=${encodeURIComponent(since)}` : ''}`),

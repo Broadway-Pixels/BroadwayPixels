@@ -11,7 +11,7 @@ npm run dev
 
 Accounts and workspace records are stored in Cloudflare D1 and sync across signed-in devices. Passwords use unique salts and PBKDF2-HMAC-SHA256 with a 600,000-iteration work factor; session tokens are random, stored only as hashes in D1, and delivered in Secure, HttpOnly cookies. Browser storage is retained only as a password-free migration cache. New accounts begin empty unless the browser contains records that the user migrates during signup; Fleeterbase does not seed demo vehicles, guests, reservations, or locations.
 
-Turo CSV files are parsed in the browser and imported records are saved to the cloud workspace. Bouncie has a real server integration: OAuth 2.0 with PKCE, encrypted rotating token storage, authenticated owner controls, webhook verification and deduplication, VIN/IMEI vehicle matching, and 15-second browser sync into the live map. Gmail uses Google OAuth, the read-only Gmail scope, encrypted token storage, Turo-message discovery, a review queue, and duplicate-resistant imports. Tesla and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
+Turo CSV files are parsed in the browser and imported records are saved to the cloud workspace. Bouncie has a real server integration: OAuth 2.0 with PKCE, per-account encrypted rotating token storage, tenant-isolated VIN/IMEI mappings and location reads, webhook verification and deduplication, and 15-second browser sync into the live map. Gmail uses Google OAuth, the read-only Gmail scope, encrypted token storage, Turo-message discovery, a review queue, and duplicate-resistant imports. Tesla and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
 
 ## Cloudflare production
 
@@ -26,13 +26,15 @@ npx wrangler deploy
 
 Cloud account endpoints are under `/api/auth/*`; authenticated workspace reads and revision-checked writes use `/api/workspace`. Do not store production passwords, provider credentials, or encryption keys in Wrangler variables or Git.
 
-## Run the integration-capable server
+## Enable Bouncie tracking in production
 
-1. Copy `.env.example` to `.env` and replace every placeholder. The app does not load `.env` automatically; export the values through your service manager or shell.
-2. Register a Bouncie developer application. Set its redirect URL to the exact `BOUNCIE_REDIRECT_URI` and its webhook URL to `https://fleeterbase.com/api/bouncie/webhook`.
+1. Register a Bouncie developer application. Set its redirect URL to exactly `https://fleeterbase.com/api/bouncie/callback` and its webhook URL to `https://fleeterbase.com/api/bouncie/webhook`.
+2. Store `BOUNCIE_CLIENT_ID`, `BOUNCIE_CLIENT_SECRET`, and a strong `BOUNCIE_WEBHOOK_KEY` as Cloudflare Worker secrets. Never commit them or add them as plaintext Wrangler variables.
 3. Subscribe the webhook to at least `tripData`; trip start/end and health events may also be enabled.
-4. Run `npm run build`, then `npm start`.
-5. In Fleeterbase, open Settings → Integrations, unlock the server with the configured owner credentials, connect Bouncie, load its vehicles, and save each match.
+4. Redeploy the Worker and confirm `/api/health` reports `bouncieConfigured: true`.
+5. Each signed-in Fleeterbase user can then open Settings → Integrations, approve their own Bouncie account, load its vehicles, and save the matches for their workspace.
+
+Bouncie requires an installed device and active subscription for every tracked vehicle. The app can be deployed and tenant-tested without provider credentials, but live OAuth and GPS events cannot be completed until the Bouncie developer application and secrets exist.
 
 ### Enable Gmail Turo imports
 

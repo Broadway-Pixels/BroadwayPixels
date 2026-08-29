@@ -28,6 +28,7 @@ import {
   getLoginAttempt,
   getMappings,
   getState,
+  latestMappedLocationStatus,
   listLocations,
   pruneReceipts,
   recordLoginFailure,
@@ -196,12 +197,14 @@ async function requireCloudSession(request: Request, env: WorkerEnv): Promise<Cl
   return session;
 }
 
-async function activeBouncieTokens(env: WorkerEnv): Promise<TokenSet> {
-  const stored = await getEncryptedState(env, 'bouncie-tokens');
+const bouncieStateKey = (userId: string, name: string) => `user:${userId}:bouncie:${name}`;
+
+async function activeBouncieTokens(env: WorkerEnv, userId: string): Promise<TokenSet> {
+  const key = bouncieStateKey(userId, 'tokens'), stored = await getEncryptedState(env, key);
   if (!isTokenSet(stored)) throw new HttpError('Connect a Bouncie account first.', 409);
   if (new Date(stored.expiresAt).getTime() > Date.now() + 60_000) return stored;
   const refreshed = await refreshAccessToken(bouncieConfig(env), stored.refreshToken);
-  await setEncryptedState(env, 'bouncie-tokens', refreshed);
+  await setEncryptedState(env, key, refreshed);
   return refreshed;
 }
 
@@ -381,38 +384,38 @@ async function handleGmail(request: Request, env: WorkerEnv, url: URL): Promise<
 
 async function handleBouncie(request: Request, env: WorkerEnv, url: URL): Promise<Response | null> {
   if (!url.pathname.startsWith('/api/bouncie/')) return null;
-  await requireSession(request, env);
+  const session = await requireCloudSession(request, env), tokensKey = bouncieStateKey(session.userId, 'tokens'), pendingKey = bouncieStateKey(session.userId, 'oauth-pending');
   if (request.method !== 'GET' && !sameOrigin(request)) throw new HttpError('Cross-origin request blocked.', 403);
   if (request.method === 'GET' && url.pathname === '/api/bouncie/status') {
-    const tokens = await getEncryptedState(env, 'bouncie-tokens'), mappings = await getMappings(env), status = stateObject(await getState(env, 'bouncie-status'));
+    const tokens = await getEncryptedState(env, tokensKey), mappings = await getMappings(env, session.userId), status = await latestMappedLocationStatus(env, session.userId) || {};
     return json({ ...status, configured: configuredForBouncie(env), connected: isTokenSet(tokens), mappingCount: mappings.length });
   }
   if (request.method === 'GET' && url.pathname === '/api/bouncie/connect') {
     if (!configuredForBouncie(env)) throw new HttpError('Add the Bouncie provider secrets before connecting.', 503);
     const pending = createOAuthRequest(bouncieConfig(env));
-    await setEncryptedState(env, 'bouncie-oauth-pending', pending);
+    await setEncryptedState(env, pendingKey, pending);
     return redirect(pending.url);
   }
   if (request.method === 'GET' && url.pathname === '/api/bouncie/callback') {
-    const pending = await getEncryptedState(env, 'bouncie-oauth-pending'), code = url.searchParams.get('code') || '', state = url.searchParams.get('state') || '';
+    const pending = await getEncryptedState(env, pendingKey), code = url.searchParams.get('code') || '', state = url.searchParams.get('state') || '';
     const fresh = isOAuthRequest(pending) && Date.now() - new Date(pending.createdAt).getTime() < 10 * 60 * 1000;
     if (!fresh || !code || !await secureEqual(state, pending.state)) return redirect(`${env.PUBLIC_ORIGIN}/?bouncie=error`);
     try {
       const tokens = await exchangeAuthorizationCode(bouncieConfig(env), { code, verifier: pending.verifier });
-      await Promise.all([setEncryptedState(env, 'bouncie-tokens', tokens), deleteState(env, 'bouncie-oauth-pending')]);
+      await Promise.all([setEncryptedState(env, tokensKey, tokens), deleteState(env, pendingKey)]);
       return redirect(`${env.PUBLIC_ORIGIN}/?bouncie=connected`);
     } catch (error) {
       console.error(JSON.stringify({ message: 'Bouncie authorization exchange failed', error: error instanceof Error ? error.message : String(error) }));
-      await deleteState(env, 'bouncie-oauth-pending');
+      await deleteState(env, pendingKey);
       return redirect(`${env.PUBLIC_ORIGIN}/?bouncie=error`);
     }
   }
   if (request.method === 'DELETE' && url.pathname === '/api/bouncie/connection') {
-    await deleteState(env, 'bouncie-tokens');
+    await deleteState(env, tokensKey);
     return json({ connected: false });
   }
   if (request.method === 'GET' && url.pathname === '/api/bouncie/vehicles') {
-    const tokens = await activeBouncieTokens(env);
+    const tokens = await activeBouncieTokens(env, session.userId);
     return json({ vehicles: await fetchVehicles(tokens.accessToken) });
   }
   if (request.method === 'PUT' && url.pathname === '/api/bouncie/mappings') {
@@ -425,12 +428,12 @@ async function handleBouncie(request: Request, env: WorkerEnv, url: URL): Promis
     if (mappings.length > 500) throw new HttpError('Too many vehicle mappings.', 400);
     const allKeys = mappings.flatMap(item => item.providerKeys);
     if (new Set(allKeys).size !== allKeys.length) throw new HttpError('Each Bouncie device can map to only one vehicle.', 400);
-    await saveMappings(env, mappings);
+    await saveMappings(env, session.userId, mappings);
     return json({ mappings });
   }
   if (request.method === 'GET' && url.pathname === '/api/bouncie/locations') {
     const since = url.searchParams.get('since') || '', limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 1000), 1), 5000);
-    return json({ points: await listLocations(env, since, limit) });
+    return json({ points: await listLocations(env, session.userId, since, limit) });
   }
   throw new HttpError('API route not found.', 404);
 }

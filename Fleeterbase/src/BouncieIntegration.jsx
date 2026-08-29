@@ -6,7 +6,7 @@ const label = vehicle => vehicle.nickname || [vehicle.year, vehicle.make, vehicl
 
 export default function BouncieIntegration({ vehicles, notify }) {
   const [authenticated, setAuthenticated] = useState(null), [status, setStatus] = useState(null), [providerVehicles, setProviderVehicles] = useState([]);
-  const [assignments, setAssignments] = useState({}), [credentials, setCredentials] = useState({ email: '', password: '' }), [busy, setBusy] = useState(false), [error, setError] = useState('');
+  const [assignments, setAssignments] = useState({}), [busy, setBusy] = useState(false), [error, setError] = useState('');
   const refresh = async () => {
     try {
       const session = await bouncieApi.session();
@@ -25,13 +25,6 @@ export default function BouncieIntegration({ vehicles, notify }) {
     const matched = provider.vin && vehicles.find(vehicle => String(vehicle.vin || '').toUpperCase() === provider.vin);
     return [provider.providerId, assignments[provider.providerId] || matched?.id || ''];
   })), [assignments, providerVehicles, vehicles]);
-  const signIn = async () => {
-    if (!credentials.email || !credentials.password) { setError('Enter the configured owner email and password.'); return; }
-    setBusy(true); setError('');
-    try { await bouncieApi.signIn(credentials.email, credentials.password); setAuthenticated(true); setStatus(await bouncieApi.status()); window.dispatchEvent(new Event('fleeterbase:server-session')); }
-    catch (reason) { setError(reason.message); }
-    finally { setBusy(false); }
-  };
   const loadVehicles = async () => {
     setBusy(true); setError('');
     try { const result = await bouncieApi.vehicles(); setProviderVehicles(result.vehicles); if (!result.vehicles.length) notify('No Bouncie vehicles were returned'); }
@@ -39,7 +32,7 @@ export default function BouncieIntegration({ vehicles, notify }) {
     finally { setBusy(false); }
   };
   const saveMappings = async () => {
-    const mappings = providerVehicles.map(provider => ({ vehicleId: autoAssignments[provider.providerId], vin: provider.vin, imei: provider.imei })).filter(mapping => mapping.vehicleId);
+    const mappings = providerVehicles.map(provider => ({ vehicleId: autoAssignments[provider.providerId], providerKeys: [provider.vin && `vin:${provider.vin}`, provider.imei && `imei:${provider.imei}`].filter(Boolean) })).filter(mapping => mapping.vehicleId && mapping.providerKeys.length);
     setBusy(true); setError('');
     try { await bouncieApi.saveMappings(mappings); setStatus(current => ({ ...current, mappingCount: mappings.length })); notify(`Saved ${mappings.length} Bouncie vehicle mapping${mappings.length === 1 ? '' : 's'}`); }
     catch (reason) { setError(reason.message); }
@@ -54,7 +47,7 @@ export default function BouncieIntegration({ vehicles, notify }) {
   };
 
   return <div className="bouncie-card"><div className="bouncie-heading"><span><Radio/></span><div><h3>Bouncie live tracking</h3><p>Secure OAuth connection, webhook locations, and VIN or device matching.</p></div>{status?.connected && <em><Check/>Connected</em>}</div>
-    {authenticated === false && <div className="bouncie-login"><div><KeyRound/><span><b>Unlock server integrations</b><small>Use the owner credentials configured on your Fleeterbase server. They are never stored in this browser.</small></span></div><div className="form-grid"><label>Owner email<input type="email" value={credentials.email} onChange={event=>setCredentials(current=>({...current,email:event.target.value}))}/></label><label>Owner password<input type="password" value={credentials.password} onChange={event=>setCredentials(current=>({...current,password:event.target.value}))} onKeyDown={event=>event.key==='Enter'&&signIn()}/></label></div><button className="button primary" type="button" onClick={signIn} disabled={busy}>{busy?<LoaderCircle className="spin"/>:<KeyRound/>}Unlock integrations</button></div>}
+    {authenticated === false && <div className="bouncie-setup"><KeyRound/><div><b>Sign in required</b><p>Sign in to your Fleeterbase workspace before connecting a tracking provider.</p></div></div>}
     {authenticated && status && !status.configured && <div className="bouncie-setup"><KeyRound/><div><b>Server credentials required</b><p>Add the Bouncie client ID, secret, redirect URI, webhook key, and Fleeterbase encryption settings from <code>.env.example</code>.</p></div></div>}
     {authenticated && status?.configured && !status.connected && <div className="bouncie-connect"><div><MapPinned/><span><b>Connect your Bouncie account</b><small>You will approve Fleeterbase on Bouncie. Access and refresh tokens stay encrypted on the server.</small></span></div><a className="button primary" href="/api/bouncie/connect">Connect Bouncie <ExternalLink/></a></div>}
     {authenticated && status?.connected && <><div className="bouncie-status-grid"><div><small>Vehicle mappings</small><b>{status.mappingCount || 0}</b></div><div><small>Last event</small><b>{status.lastEventAt ? new Date(status.lastEventAt).toLocaleString() : 'Waiting for drive data'}</b></div><div><small>Event type</small><b>{status.lastEventType || '—'}</b></div></div><div className="bouncie-actions"><button className="button primary" type="button" onClick={loadVehicles} disabled={busy}>{busy?<LoaderCircle className="spin"/>:<Radio/>}Load Bouncie vehicles</button><button className="button ghost" type="button" onClick={disconnect} disabled={busy}><Unplug/>Disconnect</button></div></>}

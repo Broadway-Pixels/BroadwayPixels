@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react';
 
 function publicUrl(value) {
   try {
-    const url = new URL(value || 'http://127.0.0.1:5173');
+    const url = new URL(value || 'https://fleeterbase.com');
     if (!['http:', 'https:'].includes(url.protocol)) throw new Error();
     return url.toString().replace(/\/$/, '');
   } catch {

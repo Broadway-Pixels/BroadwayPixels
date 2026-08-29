@@ -16,7 +16,7 @@ Turo CSV import is local. Bouncie has a real server integration: OAuth 2.0 with 
 ## Run the integration-capable server
 
 1. Copy `.env.example` to `.env` and replace every placeholder. The app does not load `.env` automatically; export the values through your service manager or shell.
-2. Register a Bouncie developer application. Set its redirect URL to the exact `BOUNCIE_REDIRECT_URI` and its webhook URL to `https://your-fleet-domain/api/bouncie/webhook`.
+2. Register a Bouncie developer application. Set its redirect URL to the exact `BOUNCIE_REDIRECT_URI` and its webhook URL to `https://fleeterbase.com/api/bouncie/webhook`.
 3. Subscribe the webhook to at least `tripData`; trip start/end and health events may also be enabled.
 4. Run `npm run build`, then `npm start`.
 5. In Fleeterbase, open Settings → Integrations, unlock the server with the configured owner credentials, connect Bouncie, load its vehicles, and save each match.
@@ -32,7 +32,7 @@ Fleeterbase requests `gmail.readonly`; it cannot send, change, or delete email. 
 
 ## Domain and SEO
 
-Set `VITE_PUBLIC_SITE_URL` to the final HTTPS origin before `npm run build`. The build injects that origin into the canonical and Open Graph tags and emits `robots.txt`, `sitemap.xml`, and `site.webmanifest`. Verify those files on the live domain after deployment; the local fallback is `http://127.0.0.1:5173`.
+Production builds default to `https://fleeterbase.com`. The build injects that origin into the canonical and Open Graph tags and emits `robots.txt`, `sitemap.xml`, and `site.webmanifest`. Override `VITE_PUBLIC_SITE_URL` only for a deliberate alternate deployment, and verify the generated files again on the live domain.
 
 The server refuses to start without owner authentication, a 32-byte encryption key, and a 32+ character session secret. Bouncie access and rotating refresh tokens are AES-256-GCM encrypted at rest. Location history and mapping data live under `FLEETERBASE_DATA_DIR`; secure and back up that directory.
 

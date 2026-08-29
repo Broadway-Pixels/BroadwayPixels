@@ -6,7 +6,7 @@ Research checked August 28, 2026. Fleetbase should integrate cloud-connected tel
 
 | Priority | Provider and hardware | Why it fits | Official integration path | Fleetbase status |
 | --- | --- | --- | --- | --- |
-| 1 | Bouncie OBD2 GPS tracker | Best initial fit for owner-operated rental fleets; designed for most OBD2 passenger vehicles, generally 1996 and newer | OAuth 2.0, REST API, authenticated webhooks, trip events, device events, MIL and battery events, geo-zones | Provider adapter planned |
+| 1 | Bouncie OBD2 GPS tracker | Best initial fit for owner-operated rental fleets; designed for most OBD2 passenger vehicles, generally 1996 and newer | OAuth 2.0, REST API, authenticated webhooks, trip events, device events, MIL and battery events, geo-zones | Adapter ready; live credentials required |
 | 2 | Zubie OBD-II GPS device | Strong rental and light-duty fleet fit with live GPS, vehicle health, trip points, diagnostics, and odometer data | Zinc OAuth 2.0, REST API, and webhooks | Provider adapter planned |
 | 3 | Geotab GO9 and supported GO devices | Broad protocol and vehicle coverage for larger fleets; detailed GPS and engine logging | MyGeotab API and data feeds | Enterprise adapter planned |
 | 4 | Samsara VG34 and VG54 gateways | Rich GPS, OBD, fault-code, odometer, route, and webhook support for enterprise fleets | Scoped API tokens, Vehicle Stats feeds, Routing APIs, and webhooks | Enterprise adapter planned |
@@ -38,4 +38,4 @@ Provider tokens and webhook secrets must live on a server, not in browser storag
 
 ## Current product boundary
 
-The Live map currently supports real manual check-ins, route history, latest-location selection, and Google Maps or Apple Maps navigation. No hardware is shown as connected. The next implementation phase is a server-side Bouncie OAuth and webhook adapter, followed by Zubie; Geotab and Samsara should remain enterprise options until customer demand justifies their account and hardware requirements.
+The Live map supports manual check-ins, Bouncie webhook locations, route history, latest-location selection, and Google Maps or Apple Maps navigation. The Bouncie adapter includes secure owner authentication, OAuth state and PKCE, encrypted rotating token storage, authenticated webhook ingestion, retry deduplication, VIN/IMEI mapping, and browser sync. A real device is not shown as connected until Bouncie issues application credentials and the production callback/webhook URLs are configured. Zubie is the next provider candidate; Geotab and Samsara should remain enterprise options until customer demand justifies their account and hardware requirements.

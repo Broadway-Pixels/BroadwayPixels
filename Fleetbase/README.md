@@ -11,4 +11,16 @@ npm run dev
 
 Account, workspace, and manual location history are saved in browser local storage. New accounts begin empty; Fleetbase does not seed demo vehicles, guests, reservations, or locations.
 
-Provider integrations such as Gmail, Tesla, Bouncie, Zubie, Geotab, Samsara, and Stripe remain disconnected until production authorization and backend services are configured. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware recommendation and implementation boundaries.
+Turo CSV import is local. Bouncie now has a real server integration: OAuth 2.0 with PKCE, encrypted rotating token storage, authenticated owner controls, webhook verification and deduplication, VIN/IMEI vehicle matching, and 15-second browser sync into the live map. Gmail, Tesla, and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
+
+## Run the Bouncie-capable server
+
+1. Copy `.env.example` to `.env` and replace every placeholder. The app does not load `.env` automatically; export the values through your service manager or shell.
+2. Register a Bouncie developer application. Set its redirect URL to the exact `BOUNCIE_REDIRECT_URI` and its webhook URL to `https://your-fleet-domain/api/bouncie/webhook`.
+3. Subscribe the webhook to at least `tripData`; trip start/end and health events may also be enabled.
+4. Run `npm run build`, then `npm start`.
+5. In Fleetbase, open Settings → Integrations, unlock the server with the configured owner credentials, connect Bouncie, load its vehicles, and save each match.
+
+The server refuses to start without owner authentication, a 32-byte encryption key, and a 32+ character session secret. Bouncie access and rotating refresh tokens are AES-256-GCM encrypted at rest. Location history and mapping data live under `FLEETBASE_DATA_DIR`; secure and back up that directory.
+
+Without Bouncie-issued client credentials and an internet-reachable HTTPS callback/webhook URL, the local build can exercise the full adapter and webhook contract but cannot complete a live Bouncie account authorization.

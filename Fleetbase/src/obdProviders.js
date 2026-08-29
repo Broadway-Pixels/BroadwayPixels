@@ -6,7 +6,7 @@ export const obdProviders = [
     coverage: 'Most passenger vehicles with an OBD2 port, generally 1996 and newer',
     data: 'Live and trip locations, speed, trips, battery, MIL alerts, geo-zones',
     integration: 'OAuth 2.0, REST API, and authenticated webhooks',
-    status: 'Provider adapter planned',
+    status: 'Adapter ready — credentials required',
     url: 'https://docs.bouncie.dev/',
   },
   {

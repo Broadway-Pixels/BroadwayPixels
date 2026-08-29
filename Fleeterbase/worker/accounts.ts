@@ -1,10 +1,11 @@
 import { Buffer } from 'node:buffer';
-import { timingSafeEqual } from 'node:crypto';
+import { passwordMatches, passwordRecord } from '../server/password.mjs';
 import type { WorkerEnv } from './store';
+
+export { passwordMatches, passwordRecord } from '../server/password.mjs';
 
 export const USER_SESSION_COOKIE = 'fleeterbase_session';
 export const USER_SESSION_SECONDS = 7 * 24 * 60 * 60;
-const PASSWORD_ITERATIONS = 600_000;
 const MAX_WORKSPACE_BYTES = 750_000;
 
 type UserRow = {
@@ -30,32 +31,8 @@ export type CloudSession = { userId: string; email: string };
 
 const encoder = new TextEncoder();
 
-function base64(value: ArrayBuffer | Uint8Array): string {
-  return Buffer.from(value instanceof Uint8Array ? value : new Uint8Array(value)).toString('base64');
-}
-
 async function sha256(value: Uint8Array): Promise<string> {
   return Buffer.from(await crypto.subtle.digest('SHA-256', new Uint8Array(value).buffer)).toString('hex');
-}
-
-async function derivePassword(password: string, salt: Uint8Array, iterations: number): Promise<string> {
-  const key = await crypto.subtle.importKey('raw', encoder.encode(password), 'PBKDF2', false, ['deriveBits']);
-  return base64(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: new Uint8Array(salt).buffer, iterations }, key, 256));
-}
-
-export async function passwordRecord(password: string): Promise<{ hash: string; salt: string; iterations: number }> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  return { hash: await derivePassword(password, salt, PASSWORD_ITERATIONS), salt: base64(salt), iterations: PASSWORD_ITERATIONS };
-}
-
-export async function passwordMatches(password: string, hash: string, salt: string, iterations: number): Promise<boolean> {
-  const calculated = Buffer.from(await derivePassword(password, Buffer.from(salt, 'base64'), iterations), 'base64');
-  const expected = Buffer.from(hash, 'base64');
-  const [calculatedHash, expectedHash] = await Promise.all([
-    crypto.subtle.digest('SHA-256', calculated),
-    crypto.subtle.digest('SHA-256', expected),
-  ]);
-  return timingSafeEqual(Buffer.from(calculatedHash), Buffer.from(expectedHash));
 }
 
 export function normalizeEmail(value: unknown): string {

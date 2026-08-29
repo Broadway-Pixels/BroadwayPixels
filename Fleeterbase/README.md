@@ -11,7 +11,7 @@ npm run dev
 
 Accounts and workspace records are stored in Cloudflare D1 and sync across signed-in devices. Passwords use unique salts and PBKDF2-HMAC-SHA256 with a 600,000-iteration work factor; session tokens are random, stored only as hashes in D1, and delivered in Secure, HttpOnly cookies. Browser storage is retained only as a password-free migration cache. New accounts begin empty unless the browser contains records that the user migrates during signup; Fleeterbase does not seed demo vehicles, guests, reservations, or locations.
 
-Turo CSV files are parsed in the browser and imported records are saved to the cloud workspace. Bouncie has a real server integration: OAuth 2.0 with PKCE, per-account encrypted rotating token storage, tenant-isolated VIN/IMEI mappings and location reads, webhook verification and deduplication, and 15-second browser sync into the live map. Gmail uses Google OAuth, the read-only Gmail scope, per-account encrypted token storage, Turo-message discovery, a review queue, and duplicate-resistant cloud imports. Tesla and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
+Turo CSV files are parsed in the browser and imported records are saved to the cloud workspace. Bouncie has a real server integration: OAuth 2.0 with PKCE, per-account encrypted rotating token storage, tenant-isolated VIN/IMEI mappings and location reads, webhook verification and deduplication, and 15-second browser sync into the live map. Gmail uses Google OAuth, the read-only Gmail scope, per-account encrypted token storage, Turo-message discovery, a review queue, and duplicate-resistant cloud imports. Stripe Billing uses hosted subscription Checkout, verified webhooks, and the Customer Portal for the advertised Free and $19/month Pro plans. Tesla remains disconnected until its provider flow is built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
 
 ## Cloudflare production
 
@@ -44,6 +44,15 @@ Bouncie requires an installed device and active subscription for every tracked v
 4. Each signed-in user can open Settings → Integrations, connect their own Gmail inbox, choose a search period, review the extracted trips, and import only the complete records they want.
 
 Fleeterbase requests `gmail.readonly`; it cannot send, change, or delete email. It stores encrypted OAuth tokens and safe connection/scan summaries, not complete email bodies. The parser is deliberately review-first because Turo email templates can vary. Google classifies Gmail read-only as a restricted scope, so a public production app must satisfy Google's OAuth verification requirements and may require a security assessment depending on how restricted data is handled.
+
+### Enable Stripe subscriptions
+
+1. In Stripe, create a recurring monthly Price for **Fleeterbase Pro** at `$19 USD`.
+2. Configure the Customer Portal for subscription cancellation, payment method updates, and invoice history.
+3. Add a webhook endpoint at `https://fleeterbase.com/api/stripe/webhook` for `checkout.session.completed` and `customer.subscription.created`, `customer.subscription.updated`, and `customer.subscription.deleted`.
+4. Store `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and `STRIPE_PRO_PRICE_ID` as Cloudflare Worker secrets, apply D1 migrations, and redeploy.
+
+The Free plan is limited to three vehicles only after Stripe is configured. Pro access is driven by signed subscription webhooks; checkout return URLs alone never grant access.
 
 ## Domain and SEO
 

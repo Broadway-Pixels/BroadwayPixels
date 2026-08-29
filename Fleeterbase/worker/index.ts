@@ -1,5 +1,6 @@
 import { Buffer } from 'node:buffer';
 import { timingSafeEqual } from 'node:crypto';
+import type Stripe from 'stripe';
 import {
   createOAuthRequest,
   exchangeAuthorizationCode,
@@ -59,6 +60,16 @@ import {
   workspaceForUser,
   type CloudSession,
 } from './accounts';
+import {
+  billingForUser,
+  hasProAccess,
+  markWebhookProcessed,
+  saveStripeCustomer,
+  saveSubscription,
+  stripeClient,
+  stripeConfigured,
+  webhookProcessed,
+} from './billing';
 
 const SESSION_COOKIE = 'fleeterbase_owner';
 const SESSION_SECONDS = 12 * 60 * 60;
@@ -135,6 +146,25 @@ async function boundedJson(request: Request, maximum: number): Promise<unknown> 
   for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.byteLength; }
   try { return total ? JSON.parse(new TextDecoder().decode(merged)) : {}; }
   catch { throw new HttpError('Request body must be valid JSON.', 400); }
+}
+
+async function boundedText(request: Request, maximum: number): Promise<string> {
+  if (!request.body) return '';
+  const stated = Number(request.headers.get('content-length') || 0);
+  if (stated > maximum) throw new HttpError('Request body is too large.', 413);
+  const reader = request.body.getReader(), chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const part = await reader.read();
+    if (part.done) break;
+    total += part.value.byteLength;
+    if (total > maximum) { await reader.cancel(); throw new HttpError('Request body is too large.', 413); }
+    chunks.push(part.value);
+  }
+  const merged = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { merged.set(chunk, offset); offset += chunk.byteLength; }
+  return new TextDecoder().decode(merged);
 }
 
 function objectValue(value: unknown): Record<string, unknown> {
@@ -312,6 +342,9 @@ async function handleCloudWorkspace(request: Request, env: WorkerEnv, url: URL):
   if (!sameOrigin(request)) throw new HttpError('Cross-origin request blocked.', 403);
   const body = objectValue(await boundedJson(request, 850_000)), workspace = validateWorkspace(body.workspace), version = Number(body.version);
   if (!workspace || !Number.isInteger(version) || version < 1) throw new HttpError('Workspace data or revision is invalid.', 400);
+  if (stripeConfigured(env) && workspace.vehicles.length > 3 && !hasProAccess(await billingForUser(env, session.userId))) {
+    throw new HttpError('Upgrade to Pro to manage more than three vehicles.', 402);
+  }
   const saved = await saveWorkspace(env, session.userId, workspace, version);
   if (!saved) {
     const current = await workspaceForUser(env, session.userId);
@@ -441,12 +474,69 @@ async function handleBouncie(request: Request, env: WorkerEnv, url: URL): Promis
   throw new HttpError('API route not found.', 404);
 }
 
+async function handleBilling(request: Request, env: WorkerEnv, url: URL): Promise<Response | null> {
+  if (url.pathname === '/api/stripe/webhook') {
+    if (request.method !== 'POST') throw new HttpError('Method not allowed.', 405);
+    if (!stripeConfigured(env)) throw new HttpError('Stripe is not configured.', 503);
+    const signature = request.headers.get('stripe-signature') || '', raw = await boundedText(request, 1_000_000);
+    let event: Stripe.Event;
+    try { event = await stripeClient(env).webhooks.constructEventAsync(raw, signature, env.STRIPE_WEBHOOK_SECRET || ''); }
+    catch { throw new HttpError('Stripe webhook signature verification failed.', 400); }
+    if (await webhookProcessed(env, event.id)) return json({ received: true, duplicate: true });
+    const stripe = stripeClient(env);
+    if (event.type === 'customer.subscription.created' || event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+      await saveSubscription(env, event.data.object as Stripe.Subscription);
+    } else if (event.type === 'checkout.session.completed') {
+      const checkout = event.data.object as Stripe.Checkout.Session;
+      const subscriptionId = typeof checkout.subscription === 'string' ? checkout.subscription : checkout.subscription?.id;
+      if (subscriptionId) await saveSubscription(env, await stripe.subscriptions.retrieve(subscriptionId));
+    }
+    await markWebhookProcessed(env, event);
+    return json({ received: true });
+  }
+  if (!url.pathname.startsWith('/api/billing/')) return null;
+  const session = await requireCloudSession(request, env);
+  if (request.method !== 'GET' && !sameOrigin(request)) throw new HttpError('Cross-origin request blocked.', 403);
+  const billing = await billingForUser(env, session.userId), pro = hasProAccess(billing);
+  if (request.method === 'GET' && url.pathname === '/api/billing/status') {
+    return json({ configured: stripeConfigured(env), plan: pro ? 'pro' : 'free', pro, status: billing?.status || 'free',
+      customerId: billing?.stripe_customer_id || null,
+      currentPeriodEnd: billing?.current_period_end ? billing.current_period_end * 1000 : null,
+      cancelAtPeriodEnd: Boolean(billing?.cancel_at_period_end) });
+  }
+  if (request.method !== 'POST') throw new HttpError('Method not allowed.', 405);
+  if (!stripeConfigured(env)) throw new HttpError('Stripe billing is not configured yet.', 503);
+  const stripe = stripeClient(env);
+  if (url.pathname === '/api/billing/checkout') {
+    if (pro) throw new HttpError('This workspace already has Pro access.', 409);
+    let customerId = billing?.stripe_customer_id || '';
+    if (!customerId) {
+      const customer = await stripe.customers.create({ email: session.email, metadata: { fleeterbase_user_id: session.userId } }, { idempotencyKey: `fleeterbase-customer-${session.userId}` });
+      customerId = customer.id;
+      await saveStripeCustomer(env, session.userId, customerId);
+    }
+    const checkout = await stripe.checkout.sessions.create({ mode: 'subscription', customer: customerId,
+      client_reference_id: session.userId, line_items: [{ price: env.STRIPE_PRO_PRICE_ID || '', quantity: 1 }],
+      allow_promotion_codes: true, success_url: `${env.PUBLIC_ORIGIN}/?billing=success`, cancel_url: `${env.PUBLIC_ORIGIN}/?billing=canceled`,
+      subscription_data: { metadata: { fleeterbase_user_id: session.userId } } });
+    if (!checkout.url) throw new Error('Stripe did not return a checkout URL.');
+    return json({ url: checkout.url });
+  }
+  if (url.pathname === '/api/billing/portal') {
+    if (!billing?.stripe_customer_id) throw new HttpError('Start a Pro subscription before opening billing management.', 409);
+    const portal = await stripe.billingPortal.sessions.create({ customer: billing.stripe_customer_id, return_url: `${env.PUBLIC_ORIGIN}/?billing=return` });
+    return json({ url: portal.url });
+  }
+  throw new HttpError('API route not found.', 404);
+}
+
 async function api(request: Request, env: WorkerEnv, ctx: ExecutionContext, url: URL): Promise<Response | null> {
-  if (url.pathname === '/api/health' && request.method === 'GET') return json({ ok: true, environment: env.ENVIRONMENT, gmailConfigured: configuredForGmail(env), bouncieConfigured: configuredForBouncie(env) });
+  if (url.pathname === '/api/health' && request.method === 'GET') return json({ ok: true, environment: env.ENVIRONMENT, gmailConfigured: configuredForGmail(env), bouncieConfigured: configuredForBouncie(env), stripeConfigured: stripeConfigured(env) });
   return await handleCloudAuth(request, env, url)
     || await handleCloudWorkspace(request, env, url)
     || await handleSession(request, env, url)
     || await handleWebhook(request, env, ctx, url)
+    || await handleBilling(request, env, url)
     || await handleGmail(request, env, url)
     || await handleBouncie(request, env, url);
 }

@@ -10,6 +10,9 @@ export type WorkerEnv = Env & {
   BOUNCIE_WEBHOOK_KEY?: string;
   GOOGLE_CLIENT_ID?: string;
   GOOGLE_CLIENT_SECRET?: string;
+  STRIPE_SECRET_KEY?: string;
+  STRIPE_WEBHOOK_SECRET?: string;
+  STRIPE_PRO_PRICE_ID?: string;
 };
 
 type EncryptedEnvelope = { version: 1; iv: string; data: string };

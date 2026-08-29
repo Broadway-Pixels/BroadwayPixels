@@ -23,7 +23,7 @@ export const bouncieApi = {
 };
 
 export const gmailApi = {
-  session: () => request('/api/session'),
+  session: () => request('/api/auth/session'),
   status: () => request('/api/gmail/status'),
   scan: months => request('/api/gmail/scan', { method: 'POST', body: JSON.stringify({ months }) }),
   disconnect: () => request('/api/gmail/connection', { method: 'DELETE' }),

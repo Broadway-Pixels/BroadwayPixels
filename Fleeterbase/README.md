@@ -11,7 +11,7 @@ npm run dev
 
 Accounts and workspace records are stored in Cloudflare D1 and sync across signed-in devices. Passwords use unique salts and PBKDF2-HMAC-SHA256 with a 600,000-iteration work factor; session tokens are random, stored only as hashes in D1, and delivered in Secure, HttpOnly cookies. Browser storage is retained only as a password-free migration cache. New accounts begin empty unless the browser contains records that the user migrates during signup; Fleeterbase does not seed demo vehicles, guests, reservations, or locations.
 
-Turo CSV files are parsed in the browser and imported records are saved to the cloud workspace. Bouncie has a real server integration: OAuth 2.0 with PKCE, per-account encrypted rotating token storage, tenant-isolated VIN/IMEI mappings and location reads, webhook verification and deduplication, and 15-second browser sync into the live map. Gmail uses Google OAuth, the read-only Gmail scope, encrypted token storage, Turo-message discovery, a review queue, and duplicate-resistant imports. Tesla and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
+Turo CSV files are parsed in the browser and imported records are saved to the cloud workspace. Bouncie has a real server integration: OAuth 2.0 with PKCE, per-account encrypted rotating token storage, tenant-isolated VIN/IMEI mappings and location reads, webhook verification and deduplication, and 15-second browser sync into the live map. Gmail uses Google OAuth, the read-only Gmail scope, per-account encrypted token storage, Turo-message discovery, a review queue, and duplicate-resistant cloud imports. Tesla and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
 
 ## Cloudflare production
 
@@ -41,7 +41,7 @@ Bouncie requires an installed device and active subscription for every tracked v
 1. In Google Cloud, create a project, enable the Gmail API, configure an OAuth consent screen, and create an OAuth client of type **Web application**.
 2. Add the exact `GOOGLE_REDIRECT_URI` from `.env.example` as an authorized redirect URI. For local testing, use the origin served by `npm start`, such as `http://127.0.0.1:4173/api/gmail/callback`.
 3. Export `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`, then restart the server.
-4. In Settings → Integrations, unlock the server, connect Gmail, choose a search period, review the extracted trips, and import only the complete records you want.
+4. Each signed-in user can open Settings → Integrations, connect their own Gmail inbox, choose a search period, review the extracted trips, and import only the complete records they want.
 
 Fleeterbase requests `gmail.readonly`; it cannot send, change, or delete email. It stores encrypted OAuth tokens and safe connection/scan summaries, not complete email bodies. The parser is deliberately review-first because Turo email templates can vary. Google classifies Gmail read-only as a restricted scope, so a public production app must satisfy Google's OAuth verification requirements and may require a security assessment depending on how restricted data is handled.
 

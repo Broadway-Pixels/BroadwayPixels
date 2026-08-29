@@ -208,12 +208,14 @@ async function activeBouncieTokens(env: WorkerEnv, userId: string): Promise<Toke
   return refreshed;
 }
 
-async function activeGmailTokens(env: WorkerEnv): Promise<TokenSet> {
-  const stored = await getEncryptedState(env, 'gmail-tokens');
+const gmailStateKey = (userId: string, name: string) => `user:${userId}:gmail:${name}`;
+
+async function activeGmailTokens(env: WorkerEnv, userId: string): Promise<TokenSet> {
+  const key = gmailStateKey(userId, 'tokens'), stored = await getEncryptedState(env, key);
   if (!isTokenSet(stored)) throw new HttpError('Connect a Gmail account first.', 409);
   if (new Date(stored.expiresAt).getTime() > Date.now() + 60_000) return stored;
   const refreshed = await refreshGoogleToken(googleConfig(env), stored.refreshToken);
-  await setEncryptedState(env, 'gmail-tokens', refreshed);
+  await setEncryptedState(env, key, refreshed);
   return refreshed;
 }
 
@@ -332,51 +334,52 @@ async function handleWebhook(request: Request, env: WorkerEnv, ctx: ExecutionCon
 
 async function handleGmail(request: Request, env: WorkerEnv, url: URL): Promise<Response | null> {
   if (!url.pathname.startsWith('/api/gmail/')) return null;
-  await requireSession(request, env);
+  const session = await requireCloudSession(request, env), tokensKey = gmailStateKey(session.userId, 'tokens');
+  const statusKey = gmailStateKey(session.userId, 'status'), pendingKey = gmailStateKey(session.userId, 'oauth-pending');
   if (request.method !== 'GET' && !sameOrigin(request)) throw new HttpError('Cross-origin request blocked.', 403);
   if (request.method === 'GET' && url.pathname === '/api/gmail/status') {
-    const tokens = await getEncryptedState(env, 'gmail-tokens'), status = stateObject(await getState(env, 'gmail-status'));
+    const tokens = await getEncryptedState(env, tokensKey), status = stateObject(await getState(env, statusKey));
     return json({ ...status, configured: configuredForGmail(env), connected: isTokenSet(tokens) });
   }
   if (request.method === 'GET' && url.pathname === '/api/gmail/connect') {
     if (!configuredForGmail(env)) throw new HttpError('Add the Google OAuth secrets before connecting Gmail.', 503);
     const pending = createGoogleOAuthRequest(googleConfig(env));
-    await setEncryptedState(env, 'google-oauth-pending', pending);
+    await setEncryptedState(env, pendingKey, pending);
     return redirect(pending.url);
   }
   if (request.method === 'GET' && url.pathname === '/api/gmail/callback') {
-    const pending = await getEncryptedState(env, 'google-oauth-pending'), code = url.searchParams.get('code') || '', state = url.searchParams.get('state') || '';
+    const pending = await getEncryptedState(env, pendingKey), code = url.searchParams.get('code') || '', state = url.searchParams.get('state') || '';
     const fresh = isOAuthRequest(pending) && Date.now() - new Date(pending.createdAt).getTime() < 10 * 60 * 1000;
     if (!fresh || !code || !await secureEqual(state, pending.state)) return redirect(`${env.PUBLIC_ORIGIN}/?gmail=error`);
     try {
       const tokens = await exchangeGoogleCode(googleConfig(env), { code, verifier: pending.verifier });
       const profile = await fetchGmailProfile(tokens.accessToken);
       await Promise.all([
-        setEncryptedState(env, 'gmail-tokens', tokens),
-        setState(env, 'gmail-status', { email: profile.email, connectedAt: new Date().toISOString() }),
-        deleteState(env, 'google-oauth-pending'),
+        setEncryptedState(env, tokensKey, tokens),
+        setState(env, statusKey, { email: profile.email, connectedAt: new Date().toISOString() }),
+        deleteState(env, pendingKey),
       ]);
       return redirect(`${env.PUBLIC_ORIGIN}/?gmail=connected`);
     } catch (error) {
       console.error(JSON.stringify({ message: 'Google authorization exchange failed', error: error instanceof Error ? error.message : String(error) }));
-      await deleteState(env, 'google-oauth-pending');
+      await deleteState(env, pendingKey);
       return redirect(`${env.PUBLIC_ORIGIN}/?gmail=error`);
     }
   }
   if (request.method === 'DELETE' && url.pathname === '/api/gmail/connection') {
-    const tokens = await getEncryptedState(env, 'gmail-tokens');
+    const tokens = await getEncryptedState(env, tokensKey);
     let revoked = false;
     try { if (isTokenSet(tokens)) { await revokeGoogleToken(tokens.refreshToken || tokens.accessToken); revoked = true; } }
     catch (error) { console.error(JSON.stringify({ message: 'Google token revocation failed', error: error instanceof Error ? error.message : String(error) })); }
-    await Promise.all([deleteState(env, 'gmail-tokens'), setState(env, 'gmail-status', {})]);
+    await Promise.all([deleteState(env, tokensKey), setState(env, statusKey, {})]);
     return json({ connected: false, revoked });
   }
   if (request.method === 'POST' && url.pathname === '/api/gmail/scan') {
     const body = objectValue(await boundedJson(request, 10_000));
-    const months = Math.min(Math.max(Number(body.months || 6), 1), 24), tokens = await activeGmailTokens(env);
+    const months = Math.min(Math.max(Number(body.months || 6), 1), 24), tokens = await activeGmailTokens(env, session.userId);
     const result = await scanTuroMessages(tokens.accessToken, { afterEpoch: Math.floor(Date.now() / 1000 - months * 30 * 86400), maxResults: 100 });
-    const previous = stateObject(await getState(env, 'gmail-status'));
-    await setState(env, 'gmail-status', { ...previous, lastScanAt: new Date().toISOString(), lastResultCount: result.candidates.length });
+    const previous = stateObject(await getState(env, statusKey));
+    await setState(env, statusKey, { ...previous, lastScanAt: new Date().toISOString(), lastResultCount: result.candidates.length });
     return json(result);
   }
   throw new HttpError('API route not found.', 404);

@@ -347,6 +347,7 @@ export default {
     const url = new URL(request.url);
     try {
       if (url.hostname === 'www.fleeterbase.com') return new Response(null, { status: 301, headers: { location: `https://fleeterbase.com${url.pathname}${url.search}` } });
+      if (url.protocol !== 'https:') return new Response(null, { status: 301, headers: { location: `https://fleeterbase.com${url.pathname}${url.search}` } });
       const response = await api(request, env, ctx, url);
       if (response) return response;
       if (url.pathname.startsWith('/api/')) throw new HttpError('API route not found.', 404);

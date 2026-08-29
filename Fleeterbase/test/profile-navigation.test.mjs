@@ -7,4 +7,8 @@ test('the top-bar account control opens Profile instead of signing out', async (
   assert.match(source, /className="account-button" onClick=\{onProfile\} title="Open profile"/);
   assert.doesNotMatch(source, /className="account-button" onClick=\{signOut\}/);
   assert.match(source, /aria-label="Sign out"/);
+  assert.match(source, /navigate=label=>\{setActive\(label\);setOpen\(false\)\}/);
+  assert.match(source, /onClick=\{\(\)=>navigate\('Profile'\)\}/);
+  assert.match(source, /onClick=\{\(\)=>navigate\('Settings'\)\}/);
+  assert.match(source, /else if\(active==='Profile'\|\|active==='Settings'\)page=<SettingsPage key=\{active\}/);
 });

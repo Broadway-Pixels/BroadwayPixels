@@ -66,7 +66,8 @@ export default function useCloudWorkspace(defaultProfile, defaultPrefs) {
 
   useEffect(() => {
     for (const [name, value] of Object.entries({ profile, prefs, vehicles, reservations, tracking })) {
-      localStorage.setItem(cacheKeys[name][0], JSON.stringify(value));
+      try { localStorage.setItem(cacheKeys[name][0], JSON.stringify(value)); }
+      catch { /* Cloud sync remains authoritative when browser storage is full or unavailable. */ }
     }
     if (session !== true) return undefined;
     const workspace = { profile, prefs, vehicles, reservations, tracking }, serialized = JSON.stringify(workspace);

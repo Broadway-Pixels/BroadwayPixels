@@ -20,6 +20,7 @@ import {
   scanTuroMessages,
   type GoogleConfig,
 } from '../server/gmail.mjs';
+import { decodeVin } from '../server/vin.mjs';
 import {
   clearLoginAttempt,
   clearSession,
@@ -400,6 +401,14 @@ async function handleCloudWorkspace(request: Request, env: WorkerEnv, url: URL):
   return json({ saved: true, ...saved });
 }
 
+async function handleVinDecode(request: Request, env: WorkerEnv, url: URL): Promise<Response | null> {
+  if (url.pathname !== '/api/vehicles/decode-vin') return null;
+  await requireCloudSession(request, env);
+  if (request.method !== 'GET') throw new HttpError('Method not allowed.', 405);
+  try { return json(await decodeVin(url.searchParams.get('vin') || '')); }
+  catch (error) { throw new HttpError(error instanceof Error ? error.message : 'This VIN could not be decoded.', 422); }
+}
+
 async function handleCloudAccount(request: Request, env: WorkerEnv, url: URL): Promise<Response | null> {
   if (url.pathname !== '/api/account' && url.pathname !== '/api/account/password') return null;
   const session = await requireCloudSession(request, env);
@@ -604,6 +613,7 @@ async function api(request: Request, env: WorkerEnv, ctx: ExecutionContext, url:
   if (url.pathname === '/api/health' && request.method === 'GET') return json({ ok: true, environment: env.ENVIRONMENT, emailConfigured: Boolean(env.EMAIL_RELAY && env.FLEETERBASE_EMAIL_RELAY_SECRET), gmailConfigured: configuredForGmail(env), bouncieConfigured: configuredForBouncie(env), stripeConfigured: stripeConfigured(env) });
   return await handleCloudAuth(request, env, url)
     || await handleCloudWorkspace(request, env, url)
+    || await handleVinDecode(request, env, url)
     || await handleCloudAccount(request, env, url)
     || await handleSession(request, env, url)
     || await handleWebhook(request, env, ctx, url)

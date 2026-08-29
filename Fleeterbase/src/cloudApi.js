@@ -21,6 +21,7 @@ export const cloudApi = {
   login: (email, password) => request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   logout: () => request('/api/auth/session', { method: 'DELETE' }),
   saveWorkspace: (workspace, version) => request('/api/workspace', { method: 'PUT', body: JSON.stringify({ workspace, version }) }),
+  decodeVin: vin => request(`/api/vehicles/decode-vin?vin=${encodeURIComponent(vin)}`),
   changePassword: (currentPassword, newPassword) => request('/api/account/password', { method: 'PUT', body: JSON.stringify({ currentPassword, newPassword }) }),
   deleteAccount: currentPassword => request('/api/account', { method: 'DELETE', body: JSON.stringify({ currentPassword }) }),
 };

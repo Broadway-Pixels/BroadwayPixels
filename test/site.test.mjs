@@ -34,6 +34,15 @@ test("projects page includes the Pixelated Discord bot", async () => {
   assert.match(projects, /A Discord bot for moderation logs, community commands, XP, and custom rank cards\./);
 });
 
+test("projects page features Autoclicker immediately before Steady", async () => {
+  const projects = await readFile(new URL("../projects.html", import.meta.url), "utf8");
+  assert.match(projects, /id="autoclicker"/);
+  assert.match(projects, /<h2>Autoclicker<\/h2>/);
+  assert.match(projects, /records and replays complete mouse paths, clicks, timing, and repeatable sequences/);
+  assert.match(projects, /assets\/autoclicker-app-icon\.png/);
+  assert.ok(projects.indexOf('id="autoclicker"') < projects.indexOf('id="steady"'));
+});
+
 test("projects page includes the Steady fitness app", async () => {
   const projects = await readFile(new URL("../projects.html", import.meta.url), "utf8");
   assert.match(projects, /id="steady"/);

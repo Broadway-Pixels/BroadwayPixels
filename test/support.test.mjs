@@ -17,6 +17,7 @@ test("validates a complete project support request", () => {
   const result = validateSupportSubmission(validSubmission);
   assert.equal(result.ok, true);
   assert.equal(result.submission.email, "river@example.com");
+  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Autoclicker" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Steady" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Projects" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Music" }).ok, true);

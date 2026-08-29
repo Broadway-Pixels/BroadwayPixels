@@ -224,6 +224,7 @@
   .project-preview-copy h2 { margin-block: 0 14px; font-size: clamp(2rem, 3vw, 3.5rem); }
   .project-preview-copy > span { display: block; max-width: 42ch; color: var(--muted); }
   .project-preview-copy strong { display: block; align-self: end; margin-top: 24px; color: var(--blue-dark); }
+  .project-preview-fleeterbase figure { background: #061a32; }
   .project-preview-autoclicker .autoclicker-art { background: radial-gradient(circle at 70% 10%, #1fcbff 0, #1156e7 44%, #2810a4 100%); }
   .project-preview-autoclicker .autoclicker-art img { object-fit: contain; padding: clamp(18px, 2.5vw, 34px); }
   .project-preview-steady .steady-art { background: #042449; }

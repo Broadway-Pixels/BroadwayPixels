@@ -34,15 +34,20 @@ test("projects page includes the Pixelated Discord bot", async () => {
   assert.match(projects, /A Discord bot for moderation logs, community commands, XP, and custom rank cards\./);
 });
 
-test("projects page features Steady, Autoclicker, then Vidioza as the newest projects", async () => {
+test("projects page features Fleeterbase before Steady, Autoclicker, and Vidioza", async () => {
   const projects = await readFile(new URL("../projects.html", import.meta.url), "utf8");
+  assert.match(projects, /id="fleeterbase"/);
+  assert.match(projects, /<h2>Fleeterbase<\/h2>/);
+  assert.match(projects, /href="https:\/\/fleeterbase\.com\/"/);
+  assert.match(projects, /cloud-synced rental operations workspace for independent hosts/);
+  assert.match(projects, /assets\/fleeterbase-preview\.svg/);
   assert.match(projects, /id="autoclicker"/);
   assert.match(projects, /<h2>Autoclicker<\/h2>/);
   assert.match(projects, /records and replays complete mouse paths, clicks, timing, and repeatable sequences/);
   assert.doesNotMatch(projects, /Toontown players/);
   assert.match(projects, /assets\/autoclicker-app-icon\.png/);
   const projectOrder = [...projects.matchAll(/<(?:article|a) id="([^"]+)"/g)].map((match) => match[1]);
-  assert.deepEqual(projectOrder.slice(0, 3), ["steady", "autoclicker", "vidioza"]);
+  assert.deepEqual(projectOrder.slice(0, 4), ["fleeterbase", "steady", "autoclicker", "vidioza"]);
 });
 
 test("projects page includes the Steady fitness app", async () => {

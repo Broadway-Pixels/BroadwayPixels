@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "broadwaypixels",
+  "main": "./worker/index.mjs",
+  "compatibility_date": "2026-08-29",
+  "account_id": "74e5863d8bfe799ac2e60352b3a05007",
+  "workers_dev": true,
+  "preview_urls": true,
+  "routes": [
+    { "pattern": "broadwaypixels.com", "custom_domain": true },
+    { "pattern": "www.broadwaypixels.com", "custom_domain": true }
+  ],
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "drop-trailing-slash"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "broadway-pixels-production",
+      "database_id": "6c5fb7bc-80d3-439d-8f40-08b750d00b79",
+      "migrations_dir": "./migrations"
+    }
+  ],
+  "vars": {
+    "SUPPORT_FROM_EMAIL": "Broadway Pixels Support <support@broadwaypixels.com>",
+    "SUPPORT_TO_EMAIL": "Media@BroadwayPixels.com",
+    "SUPPORT_LOGO_URL": "https://broadwaypixels.com/assets/broadway-pixels-logo-v2.png?v=20260722-1",
+    "ALLOWED_ORIGINS": "https://broadwaypixels.com,https://www.broadwaypixels.com"
+  },
+  "triggers": { "crons": ["0 5 * * *"] },
+  "observability": { "enabled": true }
+}

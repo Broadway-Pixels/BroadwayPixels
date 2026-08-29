@@ -4,3 +4,8 @@
 !.env.example
 preview-*.png
 visual-check.mjs
+.dev.vars
+.wrangler/
+data/
+dist/
+node_modules/

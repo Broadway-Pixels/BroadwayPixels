@@ -46,9 +46,20 @@ Then open `http://localhost:8080`.
 
 Use the design as a visual blueprint in Squarespace 7.1. Create Home, Projects, Music, and Support pages, add the generated art as image blocks, and copy the text section by section. The custom CSS can be adapted in Design > Custom CSS. Keep the Resend API endpoint on a server or serverless host because Squarespace browser code must not contain the secret key.
 
-## Droplet path
+## Cloudflare production hosting
 
-The support form and dashboard need server endpoints, so run `server.mjs` behind Nginx instead of serving the folder directly. Copy `.env.example` to a protected environment file, add the Resend and dashboard values, create `/var/lib/broadway-pixels/analytics` and `/var/lib/broadway-pixels/tickets` owned by the service user, run the Node process with systemd, and proxy Nginx to `127.0.0.1:8080`. Add HTTPS with Certbot.
+Broadway Pixels runs as one Cloudflare Worker with Static Assets and a D1 database. Static pages and assets are built into `dist/`; `/api/support`, `/api/analytics`, and `/api/dashboard` run in `worker/index.mjs`. D1 stores tickets, reply history, archive state, first-party analytics, and rate-limit counters. Resend remains the transactional email provider.
+
+```bash
+npm install
+npm run build
+npm run cf:migrate:local
+npm run cf:dev
+```
+
+Production configuration lives in `wrangler.jsonc`. Store `RESEND_API_KEY`, `DASHBOARD_USERNAME`, `DASHBOARD_PASSWORD`, and `DASHBOARD_SESSION_SECRET` with `wrangler secret`; never place their real values in the repository. Apply migrations with `npm run cf:migrate:remote`, then deploy with `npm run cf:deploy`.
+
+The legacy Node/Nginx files remain temporarily for rollback while the Cloudflare deployment is proven. They are no longer the intended production hosting path after cutover.
 
 ## Theme and analytics
 
@@ -64,8 +75,8 @@ The support form and dashboard need server endpoints, so run `server.mjs` behind
 
 1. Add and verify `broadwaypixels.com` in Resend.
 2. Create a sending-only API key restricted to that domain.
-3. Set `RESEND_API_KEY`, `SUPPORT_FROM_EMAIL`, `SUPPORT_TO_EMAIL`, `SUPPORT_DATA_DIR`, and `ALLOWED_ORIGINS` from `.env.example` in the hosting environment.
-4. Run `npm test`, then start the site with `npm start`.
+3. Store `RESEND_API_KEY` as a Cloudflare Worker secret. Public email addresses and allowed origins are configured in `wrangler.jsonc`.
+4. Run `npm test`, `npm run build`, and `npm run cf:deploy`.
 
 The API key must only exist on the server. Never add the real key to `support.js`, HTML, Git, or Squarespace code injection. If the frontend remains on Squarespace, deploy `/api/support` separately and change the form fetch URL in `support.js` to that HTTPS endpoint.
 

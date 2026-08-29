@@ -1,0 +1,35 @@
+import { useMemo, useState } from 'react';
+import { CarFront, Clock3, LocateFixed, MapPin, Navigation, Plus, Radio, Route, X } from 'lucide-react';
+import FleetMap from './FleetMap';
+import { createTrackingPoint, latestByVehicle, navigationLinks } from './tracking';
+import './tracking.css';
+
+function LocationModal({ vehicles, initialVehicleId, close, save }) {
+  const [form, setForm] = useState({ vehicleId: initialVehicleId || vehicles[0]?.id || '', address: '', latitude: '', longitude: '', speed: '0' });
+  const [error, setError] = useState(''), [locating, setLocating] = useState(false);
+  const change = event => setForm(current => ({ ...current, [event.target.name]: event.target.value }));
+  const useDeviceLocation = () => {
+    if (!navigator.geolocation) { setError('Location access is not available in this browser.'); return; }
+    setLocating(true); setError('');
+    navigator.geolocation.getCurrentPosition(position => {
+      setForm(current => ({ ...current, latitude: position.coords.latitude.toFixed(6), longitude: position.coords.longitude.toFixed(6) }));
+      setLocating(false);
+    }, () => { setLocating(false); setError('Location access was denied or unavailable. Enter the coordinates manually.'); }, { enableHighAccuracy: true, timeout: 10000 });
+  };
+  const submit = event => {
+    event.preventDefault();
+    try { save(createTrackingPoint(form, crypto.randomUUID())); close(); }
+    catch (reason) { setError(reason.message); }
+  };
+  return <div className="modal-backdrop"><form className="crud-modal location-modal" onSubmit={submit}><button type="button" className="close-button" onClick={close} aria-label="Close"><X/></button><h2>Update vehicle location</h2><p>Add a manual check-in now. Connected OBD providers will use the same timeline automatically after authorization.</p><label>Vehicle<select name="vehicleId" value={form.vehicleId} onChange={change} required>{vehicles.map(vehicle=><option key={vehicle.id} value={vehicle.id}>{vehicle.name}</option>)}</select></label><label>Location label<input name="address" value={form.address} onChange={change} placeholder="Airport garage, home lot, or street"/></label><div className="form-grid"><label>Latitude<input name="latitude" type="number" step="any" min="-90" max="90" value={form.latitude} onChange={change} placeholder="28.538336" required/></label><label>Longitude<input name="longitude" type="number" step="any" min="-180" max="180" value={form.longitude} onChange={change} placeholder="-81.379234" required/></label></div><label>Current speed (mph)<input name="speed" type="number" min="0" step="1" value={form.speed} onChange={change}/></label><button className="button ghost full" type="button" onClick={useDeviceLocation} disabled={locating}><LocateFixed/>{locating?'Finding this device…':'Use this device location'}</button>{error&&<div className="form-error">{error}</div>}<button className="button primary full">Save location</button></form></div>;
+}
+
+export default function TrackingPage({ vehicles, points, onAddPoint, notify }) {
+  const [selectedVehicleId, setSelectedVehicleId] = useState(''), [showUpdate, setShowUpdate] = useState(false);
+  const latest = useMemo(() => latestByVehicle(points), [points]);
+  const trackedVehicleIds = [...latest.keys()], effectiveSelected = vehicles.some(vehicle => vehicle.id === selectedVehicleId) ? selectedVehicleId : trackedVehicleIds.find(id => vehicles.some(vehicle => vehicle.id === id)) || vehicles[0]?.id || '';
+  const selectedVehicle = vehicles.find(vehicle => vehicle.id === effectiveSelected), selectedPoint = latest.get(effectiveSelected), links = navigationLinks(selectedPoint);
+  const activity = useMemo(() => [...points].sort((a,b)=>new Date(b.recordedAt)-new Date(a.recordedAt)).slice(0,12), [points]);
+  const addPoint = point => { onAddPoint(point); setSelectedVehicleId(point.vehicleId); notify('Vehicle location updated'); };
+  return <div className="tracking-page"><div className="app-page-heading"><div><h1>Live map</h1><p>Track vehicle locations, routes, and pickup navigation.</p></div><button className="button primary" onClick={()=>vehicles.length?setShowUpdate(true):notify('Add a vehicle before tracking a location')}><Plus/>Update location</button></div><div className="tracking-layout"><section className="tracking-map-panel"><FleetMap vehicles={vehicles} points={points} selectedVehicleId={effectiveSelected} onSelect={setSelectedVehicleId}/>{points.length===0&&<div className="map-empty-message"><MapPin/><b>No vehicle locations yet</b><span>Add a manual check-in or connect a supported telematics provider.</span></div>}</section><aside className="tracking-detail"><label>Vehicle<select value={effectiveSelected} onChange={event=>setSelectedVehicleId(event.target.value)} disabled={!vehicles.length}>{vehicles.length?vehicles.map(vehicle=><option key={vehicle.id} value={vehicle.id}>{vehicle.name}</option>):<option>No vehicles</option>}</select></label><div className="tracking-vehicle"><span><CarFront/></span><div><h2>{selectedVehicle?.name||'Select a vehicle'}</h2><p>{selectedVehicle?.plate||'No plate recorded'}</p></div></div>{selectedPoint?<><dl><div><dt><Clock3/>Last updated</dt><dd>{new Date(selectedPoint.recordedAt).toLocaleString()}</dd></div><div><dt><Route/>Speed</dt><dd>{selectedPoint.speed} mph</dd></div><div><dt><Radio/>Tracking source</dt><dd>{selectedPoint.source}</dd></div><div><dt><MapPin/>Location</dt><dd>{selectedPoint.address||`${selectedPoint.latitude.toFixed(5)}, ${selectedPoint.longitude.toFixed(5)}`}</dd></div></dl><div className="navigation-actions"><a className="button primary" href={links.google} target="_blank" rel="noreferrer"><Navigation/>Google Maps</a><a className="button ghost" href={links.apple} target="_blank" rel="noreferrer"><Navigation/>Apple Maps</a></div></>:<div className="tracking-no-data"><MapPin/><b>No location for this vehicle</b><p>Add its first check-in to enable navigation.</p></div>}<button className="button ghost full" onClick={()=>vehicles.length?setShowUpdate(true):notify('Add a vehicle before tracking a location')}><LocateFixed/>Update location</button></aside></div><section className="tracking-activity"><div><h2>Recent activity</h2><p>Newest location updates across your fleet.</p></div>{activity.length?<div className="tracking-table"><table><thead><tr><th>Time</th><th>Vehicle</th><th>Location</th><th>Speed</th><th>Source</th></tr></thead><tbody>{activity.map(point=>{const vehicle=vehicles.find(item=>item.id===point.vehicleId);return <tr key={point.id} onClick={()=>setSelectedVehicleId(point.vehicleId)}><td>{new Date(point.recordedAt).toLocaleString()}</td><td>{vehicle?.name||'Removed vehicle'}</td><td>{point.address||`${point.latitude.toFixed(4)}, ${point.longitude.toFixed(4)}`}</td><td>{point.speed} mph</td><td>{point.source}</td></tr>})}</tbody></table></div>:<div className="tracking-activity-empty">Location activity will appear here after the first check-in.</div>}</section>{showUpdate&&<LocationModal vehicles={vehicles} initialVehicleId={effectiveSelected} close={()=>setShowUpdate(false)} save={addPoint}/>}</div>;
+}

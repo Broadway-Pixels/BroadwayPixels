@@ -45,9 +45,11 @@ import {
   USER_SESSION_SECONDS,
   clearUserLoginAttempt,
   clearUserSession,
+  changeUserPassword,
   cloudSession,
   createCloudAccount,
   createUserSession,
+  deleteCloudAccount,
   loginAttempt,
   normalizeEmail,
   passwordMatches,
@@ -55,6 +57,7 @@ import {
   recordUserLoginFailure,
   saveWorkspace,
   userByEmail,
+  userById,
   validEmail,
   validateWorkspace,
   workspaceForUser,
@@ -353,6 +356,29 @@ async function handleCloudWorkspace(request: Request, env: WorkerEnv, url: URL):
   return json({ saved: true, ...saved });
 }
 
+async function handleCloudAccount(request: Request, env: WorkerEnv, url: URL): Promise<Response | null> {
+  if (url.pathname !== '/api/account' && url.pathname !== '/api/account/password') return null;
+  const session = await requireCloudSession(request, env);
+  if (url.pathname === '/api/account/password' && request.method !== 'PUT') throw new HttpError('Method not allowed.', 405);
+  if (url.pathname === '/api/account' && request.method !== 'DELETE') throw new HttpError('Method not allowed.', 405);
+  if (!sameOrigin(request)) throw new HttpError('Cross-origin request blocked.', 403);
+  const body = objectValue(await boundedJson(request, 20_000)), currentPassword = String(body.currentPassword || '');
+  const user = await userById(env, session.userId);
+  if (!user || !await passwordMatches(currentPassword, user.password_hash, user.password_salt, user.password_iterations)) {
+    throw new HttpError('Current password is incorrect.', 401);
+  }
+  if (url.pathname === '/api/account/password') {
+    const newPassword = String(body.newPassword || '');
+    if (newPassword.length < 10 || newPassword.length > 128) throw new HttpError('New password must be 10 to 128 characters.', 400);
+    if (newPassword === currentPassword) throw new HttpError('Choose a different password.', 400);
+    await changeUserPassword(env, session.userId, newPassword);
+    return json({ changed: true }, 200, { 'set-cookie': clearUserSessionCookie() });
+  }
+  if (hasProAccess(await billingForUser(env, session.userId))) throw new HttpError('Cancel the Pro subscription in Billing before deleting this account.', 409);
+  await deleteCloudAccount(env, session.userId);
+  return json({ deleted: true }, 200, { 'set-cookie': clearUserSessionCookie() });
+}
+
 async function handleWebhook(request: Request, env: WorkerEnv, ctx: ExecutionContext, url: URL): Promise<Response | null> {
   if (url.pathname !== '/api/bouncie/webhook') return null;
   if (request.method !== 'POST') throw new HttpError('Method not allowed.', 405);
@@ -534,6 +560,7 @@ async function api(request: Request, env: WorkerEnv, ctx: ExecutionContext, url:
   if (url.pathname === '/api/health' && request.method === 'GET') return json({ ok: true, environment: env.ENVIRONMENT, gmailConfigured: configuredForGmail(env), bouncieConfigured: configuredForBouncie(env), stripeConfigured: stripeConfigured(env) });
   return await handleCloudAuth(request, env, url)
     || await handleCloudWorkspace(request, env, url)
+    || await handleCloudAccount(request, env, url)
     || await handleSession(request, env, url)
     || await handleWebhook(request, env, ctx, url)
     || await handleBilling(request, env, url)

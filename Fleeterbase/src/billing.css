@@ -47,3 +47,31 @@
   .billing-actions { align-items: stretch; flex-direction: column; }
   .billing-actions .button { width: 100%; }
 }
+
+.account-security-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.account-security-grid > div {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+
+.account-security-grid h3,
+.account-security-grid p { margin: 0; }
+.account-security-grid h3 { font-size: 13px; }
+.account-security-grid p { color: var(--muted); font-size: 9px; line-height: 1.5; }
+.account-security-grid .button,
+.account-security-grid .danger-button { justify-self: start; margin-top: 3px; }
+.delete-account-panel { border-color: #efcaca !important; background: #fffafa; }
+
+@media (max-width: 780px) {
+  .account-security-grid { grid-template-columns: 1fr; }
+}

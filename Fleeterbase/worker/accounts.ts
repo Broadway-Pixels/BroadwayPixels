@@ -96,6 +96,27 @@ export async function userByEmail(env: WorkerEnv, email: string): Promise<UserRo
     .bind(email).first<UserRow>();
 }
 
+export async function userById(env: WorkerEnv, userId: string): Promise<UserRow | null> {
+  return env.DB.prepare(`SELECT id, email, password_hash, password_salt, password_iterations FROM users WHERE id = ?`)
+    .bind(userId).first<UserRow>();
+}
+
+export async function changeUserPassword(env: WorkerEnv, userId: string, password: string): Promise<void> {
+  const passwordValue = await passwordRecord(password), now = Date.now();
+  await env.DB.batch([
+    env.DB.prepare(`UPDATE users SET password_hash = ?, password_salt = ?, password_iterations = ?, updated_at = ? WHERE id = ?`)
+      .bind(passwordValue.hash, passwordValue.salt, passwordValue.iterations, now, userId),
+    env.DB.prepare('DELETE FROM user_sessions WHERE user_id = ?').bind(userId),
+  ]);
+}
+
+export async function deleteCloudAccount(env: WorkerEnv, userId: string): Promise<void> {
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM app_state WHERE key LIKE ?').bind(`user:${userId}:%`),
+    env.DB.prepare('DELETE FROM users WHERE id = ?').bind(userId),
+  ]);
+}
+
 export async function createUserSession(env: WorkerEnv, userId: string): Promise<string> {
   const bytes = crypto.getRandomValues(new Uint8Array(32)), token = Buffer.from(bytes).toString('base64url');
   const now = Date.now(), expiresAt = now + USER_SESSION_SECONDS * 1000;

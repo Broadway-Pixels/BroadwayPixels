@@ -17,7 +17,7 @@ function seoFiles(siteUrl) {
     transformIndexHtml(html) { return html.replaceAll('{{SITE_URL}}', siteUrl); },
     generateBundle() {
       this.emitFile({ type: 'asset', fileName: 'robots.txt', source: `User-agent: *\nAllow: /\nSitemap: ${siteUrl}/sitemap.xml\n` });
-      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${siteUrl}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url></urlset>\n` });
+      this.emitFile({ type: 'asset', fileName: 'sitemap.xml', source: `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${siteUrl}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url><url><loc>${siteUrl}/privacy.html</loc><changefreq>yearly</changefreq><priority>0.3</priority></url><url><loc>${siteUrl}/terms.html</loc><changefreq>yearly</changefreq><priority>0.3</priority></url></urlset>\n` });
       this.emitFile({ type: 'asset', fileName: 'site.webmanifest', source: JSON.stringify({ name: 'Fleeterbase', short_name: 'Fleeterbase', description: 'Rental fleet operations for Turo hosts.', start_url: '/', display: 'standalone', background_color: '#ffffff', theme_color: '#06192e', icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any' }] }, null, 2) });
     },
   };

@@ -28,7 +28,7 @@ export default function BouncieIntegration({ vehicles, notify }) {
   const signIn = async () => {
     if (!credentials.email || !credentials.password) { setError('Enter the configured owner email and password.'); return; }
     setBusy(true); setError('');
-    try { await bouncieApi.signIn(credentials.email, credentials.password); setAuthenticated(true); setStatus(await bouncieApi.status()); }
+    try { await bouncieApi.signIn(credentials.email, credentials.password); setAuthenticated(true); setStatus(await bouncieApi.status()); window.dispatchEvent(new Event('fleeterbase:server-session')); }
     catch (reason) { setError(reason.message); }
     finally { setBusy(false); }
   };

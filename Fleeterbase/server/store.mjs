@@ -60,6 +60,15 @@ export class FleeterbaseStore {
   async getPendingOAuth() { const stored = await readJson(this.file('oauth-pending.enc.json'), null); return stored ? this.decrypt(stored) : null; }
   async clearPendingOAuth() { return this.locked(() => this.writeJson('oauth-pending.enc.json', null)); }
 
+  async saveGmailTokens(tokens) { return this.locked(() => this.writeJson('gmail-tokens.enc.json', this.encrypt(tokens))); }
+  async getGmailTokens() { const stored = await readJson(this.file('gmail-tokens.enc.json'), null); return stored ? this.decrypt(stored) : null; }
+  async clearGmailTokens() { return this.locked(() => this.writeJson('gmail-tokens.enc.json', null)); }
+  async savePendingGoogleOAuth(pending) { return this.locked(() => this.writeJson('google-oauth-pending.enc.json', this.encrypt(pending))); }
+  async getPendingGoogleOAuth() { const stored = await readJson(this.file('google-oauth-pending.enc.json'), null); return stored ? this.decrypt(stored) : null; }
+  async clearPendingGoogleOAuth() { return this.locked(() => this.writeJson('google-oauth-pending.enc.json', null)); }
+  async saveGmailStatus(status) { return this.locked(() => this.writeJson('gmail-status.json', status)); }
+  async getGmailStatus() { return readJson(this.file('gmail-status.json'), {}); }
+
   async getMappings() { return readJson(this.file('bouncie-mappings.json'), []); }
   async saveMappings(mappings) { return this.locked(() => this.writeJson('bouncie-mappings.json', mappings)); }
 

@@ -1,6 +1,6 @@
 # Fleeterbase
 
-A local-first rental operations workspace for independent hosts. It includes a public landing page, account onboarding, empty-state dashboard, vehicle and reservation workflows, Turo CSV imports, live fleet mapping, route history, pickup navigation, account/profile settings, notification preferences, integration setup states, and workspace export/reset controls.
+A local-first rental operations workspace for independent hosts. It includes a public landing page, account onboarding, empty-state dashboard, vehicle and reservation workflows, Turo CSV and Gmail imports, live fleet mapping, route history, pickup navigation, account/profile settings, notification preferences, integration setup states, and workspace export/reset controls.
 
 ## Run
 
@@ -11,9 +11,9 @@ npm run dev
 
 Account, workspace, and manual location history are saved in browser local storage. New accounts begin empty; Fleeterbase does not seed demo vehicles, guests, reservations, or locations.
 
-Turo CSV import is local. Bouncie now has a real server integration: OAuth 2.0 with PKCE, encrypted rotating token storage, authenticated owner controls, webhook verification and deduplication, VIN/IMEI vehicle matching, and 15-second browser sync into the live map. Gmail, Tesla, and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
+Turo CSV import is local. Bouncie has a real server integration: OAuth 2.0 with PKCE, encrypted rotating token storage, authenticated owner controls, webhook verification and deduplication, VIN/IMEI vehicle matching, and 15-second browser sync into the live map. Gmail uses Google OAuth, the read-only Gmail scope, encrypted token storage, Turo-message discovery, a review queue, and duplicate-resistant imports. Tesla and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
 
-## Run the Bouncie-capable server
+## Run the integration-capable server
 
 1. Copy `.env.example` to `.env` and replace every placeholder. The app does not load `.env` automatically; export the values through your service manager or shell.
 2. Register a Bouncie developer application. Set its redirect URL to the exact `BOUNCIE_REDIRECT_URI` and its webhook URL to `https://your-fleet-domain/api/bouncie/webhook`.
@@ -21,8 +21,21 @@ Turo CSV import is local. Bouncie now has a real server integration: OAuth 2.0 w
 4. Run `npm run build`, then `npm start`.
 5. In Fleeterbase, open Settings → Integrations, unlock the server with the configured owner credentials, connect Bouncie, load its vehicles, and save each match.
 
+### Enable Gmail Turo imports
+
+1. In Google Cloud, create a project, enable the Gmail API, configure an OAuth consent screen, and create an OAuth client of type **Web application**.
+2. Add the exact `GOOGLE_REDIRECT_URI` from `.env.example` as an authorized redirect URI. For local testing, use the origin served by `npm start`, such as `http://127.0.0.1:4173/api/gmail/callback`.
+3. Export `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_REDIRECT_URI`, then restart the server.
+4. In Settings → Integrations, unlock the server, connect Gmail, choose a search period, review the extracted trips, and import only the complete records you want.
+
+Fleeterbase requests `gmail.readonly`; it cannot send, change, or delete email. It stores encrypted OAuth tokens and safe connection/scan summaries, not complete email bodies. The parser is deliberately review-first because Turo email templates can vary. Google classifies Gmail read-only as a restricted scope, so a public production app must satisfy Google's OAuth verification requirements and may require a security assessment depending on how restricted data is handled.
+
+## Domain and SEO
+
+Set `VITE_PUBLIC_SITE_URL` to the final HTTPS origin before `npm run build`. The build injects that origin into the canonical and Open Graph tags and emits `robots.txt`, `sitemap.xml`, and `site.webmanifest`. Verify those files on the live domain after deployment; the local fallback is `http://127.0.0.1:5173`.
+
 The server refuses to start without owner authentication, a 32-byte encryption key, and a 32+ character session secret. Bouncie access and rotating refresh tokens are AES-256-GCM encrypted at rest. Location history and mapping data live under `FLEETERBASE_DATA_DIR`; secure and back up that directory.
 
 Upgrades from the former Fleetbase name are automatic: legacy browser storage, owner-session cookies, and `FLEETBASE_*` environment variables remain readable. New deployments should use the `FLEETERBASE_*` names in `.env.example`.
 
-Without Bouncie-issued client credentials and an internet-reachable HTTPS callback/webhook URL, the local build can exercise the full adapter and webhook contract but cannot complete a live Bouncie account authorization.
+Without provider-issued credentials and internet-reachable callback URLs, the local build can exercise the adapters, parser, encryption, UI, and webhook contract but cannot complete live Bouncie or Gmail authorization.

@@ -1,10 +1,11 @@
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 import { createReadStream } from 'node:fs';
-import { access, readFile, stat } from 'node:fs/promises';
+import { access, stat } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { constantTimeMatch, createOAuthRequest, exchangeAuthorizationCode, fetchVehicles, refreshAccessToken, normalizeWebhook } from './server/bouncie.mjs';
+import { createGoogleOAuthRequest, exchangeGoogleCode, fetchGmailProfile, refreshGoogleToken, revokeGoogleToken, scanTuroMessages } from './server/gmail.mjs';
 import { FleeterbaseStore } from './server/store.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -24,6 +25,11 @@ const config = {
     redirectUri: String(process.env.BOUNCIE_REDIRECT_URI || ''),
     webhookKey: String(process.env.BOUNCIE_WEBHOOK_KEY || ''),
   },
+  gmail: {
+    clientId: String(process.env.GOOGLE_CLIENT_ID || ''),
+    clientSecret: String(process.env.GOOGLE_CLIENT_SECRET || ''),
+    redirectUri: String(process.env.GOOGLE_REDIRECT_URI || ''),
+  },
 };
 
 const missingCore = [
@@ -42,6 +48,7 @@ await store.init();
 const loginAttempts = new Map();
 
 const configuredForBouncie = () => Boolean(config.bouncie.clientId && config.bouncie.clientSecret && config.bouncie.redirectUri && config.bouncie.webhookKey);
+const configuredForGmail = () => Boolean(config.gmail.clientId && config.gmail.clientSecret && config.gmail.redirectUri);
 const json = (response, status, body, headers = {}) => {
   response.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...headers });
   response.end(JSON.stringify(body));
@@ -115,6 +122,16 @@ async function activeTokens() {
   return tokens;
 }
 
+async function activeGmailTokens() {
+  let tokens = await store.getGmailTokens();
+  if (!tokens) { const error = new Error('Connect a Gmail account first.'); error.status = 409; throw error; }
+  if (new Date(tokens.expiresAt).getTime() <= Date.now() + 60_000) {
+    tokens = await refreshGoogleToken(config.gmail, tokens.refreshToken);
+    await store.saveGmailTokens(tokens);
+  }
+  return tokens;
+}
+
 function mappingKeys(item) {
   return [...new Set([
     item.imei && `imei:${String(item.imei).trim()}`,
@@ -152,9 +169,55 @@ async function api(request, response, url) {
     const result = await store.recordWebhook(normalizeWebhook(value, raw));
     return json(response, 200, { accepted: true, ...result });
   }
-  if (!url.pathname.startsWith('/api/bouncie/')) return false;
+  if (!url.pathname.startsWith('/api/bouncie/') && !url.pathname.startsWith('/api/gmail/')) return false;
   if (!requireSession(request, response)) return true;
   if (request.method !== 'GET' && !sameOrigin(request)) return json(response, 403, { error: 'Cross-origin request blocked.' });
+
+  if (request.method === 'GET' && url.pathname === '/api/gmail/status') {
+    const tokens = await store.getGmailTokens(), status = await store.getGmailStatus();
+    return json(response, 200, { ...status, configured: configuredForGmail(), connected: Boolean(tokens) });
+  }
+  if (request.method === 'GET' && url.pathname === '/api/gmail/connect') {
+    if (!configuredForGmail()) return json(response, 503, { error: 'Add the Google OAuth environment settings before connecting Gmail.' });
+    const pending = createGoogleOAuthRequest(config.gmail);
+    await store.savePendingGoogleOAuth(pending);
+    return redirect(response, pending.url);
+  }
+  if (request.method === 'GET' && url.pathname === '/api/gmail/callback') {
+    const pending = await store.getPendingGoogleOAuth(), code = url.searchParams.get('code'), state = url.searchParams.get('state');
+    const fresh = pending && Date.now() - new Date(pending.createdAt).getTime() < 10 * 60 * 1000;
+    if (!code || !fresh || !constantTimeMatch(state, pending.state)) return redirect(response, '/?gmail=error');
+    try {
+      const tokens = await exchangeGoogleCode(config.gmail, { code, verifier: pending.verifier });
+      const profile = await fetchGmailProfile(tokens.accessToken);
+      await Promise.all([
+        store.saveGmailTokens(tokens),
+        store.saveGmailStatus({ email: profile.email, connectedAt: new Date().toISOString() }),
+        store.clearPendingGoogleOAuth(),
+      ]);
+      return redirect(response, '/?gmail=connected');
+    } catch (error) {
+      console.error('Google authorization exchange failed:', error.message);
+      await store.clearPendingGoogleOAuth();
+      return redirect(response, '/?gmail=error');
+    }
+  }
+  if (request.method === 'DELETE' && url.pathname === '/api/gmail/connection') {
+    const tokens = await store.getGmailTokens();
+    let revoked = false;
+    try { if (tokens) { await revokeGoogleToken(tokens.refreshToken || tokens.accessToken); revoked = true; } }
+    catch (error) { console.error('Google token revocation failed:', error.message); }
+    await Promise.all([store.clearGmailTokens(), store.saveGmailStatus({})]);
+    return json(response, 200, { connected: false, revoked });
+  }
+  if (request.method === 'POST' && url.pathname === '/api/gmail/scan') {
+    const { value } = await body(request, 10_000), months = Math.min(Math.max(Number(value.months || 6), 1), 24);
+    const tokens = await activeGmailTokens(), afterEpoch = Math.floor(Date.now() / 1000 - months * 30 * 86400);
+    const result = await scanTuroMessages(tokens.accessToken, { afterEpoch, maxResults: 100 });
+    const previous = await store.getGmailStatus(), scanStatus = { ...previous, lastScanAt: new Date().toISOString(), lastResultCount: result.candidates.length };
+    await store.saveGmailStatus(scanStatus);
+    return json(response, 200, result);
+  }
 
   if (request.method === 'GET' && url.pathname === '/api/bouncie/status') {
     const tokens = await store.getTokens(), mappings = await store.getMappings(), status = await store.status();
@@ -219,7 +282,7 @@ async function staticFile(request, response, url) {
     'x-content-type-options': 'nosniff',
     'x-frame-options': 'DENY',
     'referrer-policy': 'strict-origin-when-cross-origin',
-    'content-security-policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    'content-security-policy': "default-src 'self'; script-src 'self' 'sha256-P8CErvsYjPD+U3WA5u1mvLpBWJHLRX4t2TSmcd7p6ls='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://*.tile.openstreetmap.org; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
   });
   if (request.method === 'HEAD') return response.end();
   createReadStream(target).pipe(response);

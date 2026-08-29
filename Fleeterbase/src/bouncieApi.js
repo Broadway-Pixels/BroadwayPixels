@@ -23,3 +23,10 @@ export const bouncieApi = {
   saveMappings: mappings => request('/api/bouncie/mappings', { method: 'PUT', body: JSON.stringify({ mappings }) }),
   disconnect: () => request('/api/bouncie/connection', { method: 'DELETE' }),
 };
+
+export const gmailApi = {
+  session: () => request('/api/session'),
+  status: () => request('/api/gmail/status'),
+  scan: months => request('/api/gmail/scan', { method: 'POST', body: JSON.stringify({ months }) }),
+  disconnect: () => request('/api/gmail/connection', { method: 'DELETE' }),
+};

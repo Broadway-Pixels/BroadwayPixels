@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Fleeterbase">
+  <rect width="64" height="64" rx="15" fill="#061a32"/>
+  <path d="M13 39h38l-4-12a7 7 0 0 0-7-5H24a7 7 0 0 0-7 5l-4 12Z" fill="#35c7bb"/>
+  <path d="M20 32h24l-2-6H22l-2 6Z" fill="#d9fff7"/>
+  <circle cx="21" cy="43" r="5" fill="#fff"/><circle cx="43" cy="43" r="5" fill="#fff"/>
+</svg>

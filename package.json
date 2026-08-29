@@ -9,7 +9,7 @@
     "cf:migrate:local": "wrangler d1 migrations apply broadwaypixels-prod --local",
     "cf:migrate:remote": "wrangler d1 migrations apply broadwaypixels-prod --remote",
     "start": "node server.mjs",
-    "test": "node --test test"
+    "test": "node --test"
   },
   "engines": {
     "node": ">=22"

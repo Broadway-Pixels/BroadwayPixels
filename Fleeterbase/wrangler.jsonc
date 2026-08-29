@@ -25,12 +25,6 @@
       "migrations_dir": "migrations"
     }
   ],
-  "services": [
-    {
-      "binding": "EMAIL_RELAY",
-      "service": "broadwaypixels"
-    }
-  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

@@ -24,7 +24,6 @@
   ],
   "vars": {
     "SUPPORT_FROM_EMAIL": "Broadway Pixels Support <support@broadwaypixels.com>",
-    "FLEETERBASE_FROM_EMAIL": "Fleeterbase via Broadway Pixels <support@broadwaypixels.com>",
     "SUPPORT_TO_EMAIL": "Media@BroadwayPixels.com",
     "SUPPORT_LOGO_URL": "https://broadwaypixels.com/assets/broadway-pixels-logo-v2.png?v=20260722-1",
     "ALLOWED_ORIGINS": "https://broadwaypixels.com,https://www.broadwaypixels.com"

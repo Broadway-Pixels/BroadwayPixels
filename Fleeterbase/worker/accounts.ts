@@ -8,13 +8,12 @@ export const USER_SESSION_COOKIE = 'fleeterbase_session';
 export const USER_SESSION_SECONDS = 7 * 24 * 60 * 60;
 const MAX_WORKSPACE_BYTES = 750_000;
 
-export type UserRow = {
+type UserRow = {
   id: string;
   email: string;
   password_hash: string;
   password_salt: string;
   password_iterations: number;
-  email_verified_at: number | null;
 };
 
 type SessionRow = { user_id: string; email: string };
@@ -70,44 +69,13 @@ export async function createCloudAccount(env: WorkerEnv, email: string, password
 }
 
 export async function userByEmail(env: WorkerEnv, email: string): Promise<UserRow | null> {
-  return env.DB.prepare(`SELECT id, email, password_hash, password_salt, password_iterations, email_verified_at FROM users WHERE email = ?`)
+  return env.DB.prepare(`SELECT id, email, password_hash, password_salt, password_iterations FROM users WHERE email = ?`)
     .bind(email).first<UserRow>();
 }
 
 export async function userById(env: WorkerEnv, userId: string): Promise<UserRow | null> {
-  return env.DB.prepare(`SELECT id, email, password_hash, password_salt, password_iterations, email_verified_at FROM users WHERE id = ?`)
+  return env.DB.prepare(`SELECT id, email, password_hash, password_salt, password_iterations FROM users WHERE id = ?`)
     .bind(userId).first<UserRow>();
-}
-
-export async function createEmailVerificationToken(env: WorkerEnv, userId: string): Promise<string | null> {
-  const now = Date.now();
-  const recent = await env.DB.prepare('SELECT created_at FROM email_verification_tokens WHERE user_id = ?')
-    .bind(userId).first<number>('created_at');
-  if (recent !== null && recent > now - 60_000) return null;
-  const bytes = crypto.getRandomValues(new Uint8Array(32)), token = Buffer.from(bytes).toString('base64url');
-  await env.DB.batch([
-    env.DB.prepare('DELETE FROM email_verification_tokens WHERE expires_at <= ?').bind(now),
-    env.DB.prepare(`INSERT INTO email_verification_tokens (token_hash, user_id, expires_at, created_at)
-      VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET token_hash = excluded.token_hash,
-      expires_at = excluded.expires_at, created_at = excluded.created_at`)
-      .bind(await sha256(bytes), userId, now + 24 * 60 * 60 * 1000, now),
-  ]);
-  return token;
-}
-
-export async function verifyEmailToken(env: WorkerEnv, token: string): Promise<{ userId: string; email: string } | null> {
-  if (!token || token.length > 100 || !/^[A-Za-z0-9_-]+$/.test(token)) return null;
-  const now = Date.now(), tokenHash = await sha256(Buffer.from(token, 'base64url'));
-  const row = await env.DB.prepare(`SELECT users.id AS user_id, users.email FROM email_verification_tokens
-    JOIN users ON users.id = email_verification_tokens.user_id
-    WHERE email_verification_tokens.token_hash = ? AND email_verification_tokens.expires_at > ?`)
-    .bind(tokenHash, now).first<{ user_id: string; email: string }>();
-  if (!row) return null;
-  await env.DB.batch([
-    env.DB.prepare('UPDATE users SET email_verified_at = ?, updated_at = ? WHERE id = ?').bind(now, now, row.user_id),
-    env.DB.prepare('DELETE FROM email_verification_tokens WHERE user_id = ?').bind(row.user_id),
-  ]);
-  return { userId: row.user_id, email: row.email };
 }
 
 export async function changeUserPassword(env: WorkerEnv, userId: string, password: string): Promise<void> {

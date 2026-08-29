@@ -45,7 +45,6 @@ import {
   USER_SESSION_SECONDS,
   clearUserLoginAttempt,
   clearUserSession,
-  createEmailVerificationToken,
   changeUserPassword,
   cloudSession,
   createCloudAccount,
@@ -61,11 +60,9 @@ import {
   userById,
   validEmail,
   validateWorkspace,
-  verifyEmailToken,
   workspaceForUser,
   type CloudSession,
 } from './accounts';
-import { sendVerificationEmail } from '../server/verificationEmail.mjs';
 import {
   billingForUser,
   hasProAccess,
@@ -291,16 +288,6 @@ async function handleSession(request: Request, env: WorkerEnv, url: URL): Promis
 
 async function handleCloudAuth(request: Request, env: WorkerEnv, url: URL): Promise<Response | null> {
   if (!url.pathname.startsWith('/api/auth/')) return null;
-  if (url.pathname === '/api/auth/verify' && request.method === 'GET') {
-    const verified = await verifyEmailToken(env, url.searchParams.get('token') || '');
-    if (!verified) return redirect('/?verification=invalid');
-    const sessionToken = await createUserSession(env, verified.userId);
-    return new Response(null, { status: 302, headers: {
-      location: '/?verified=1',
-      'cache-control': 'no-store',
-      'set-cookie': setUserSessionCookie(sessionToken),
-    } });
-  }
   if (url.pathname === '/api/auth/session' && request.method === 'GET') {
     const session = await currentCloudSession(request, env);
     if (!session) return json({ authenticated: false });
@@ -313,26 +300,8 @@ async function handleCloudAuth(request: Request, env: WorkerEnv, url: URL): Prom
   }
   if (request.method !== 'POST') throw new HttpError('Method not allowed.', 405);
   const body = objectValue(await boundedJson(request, url.pathname === '/api/auth/register' ? 850_000 : 20_000));
-  const email = normalizeEmail(body.email);
+  const email = normalizeEmail(body.email), password = String(body.password || '');
   if (!validEmail(email)) throw new HttpError('Enter a valid email address.', 400);
-  if (url.pathname === '/api/auth/resend-verification') {
-    const user = await userByEmail(env, email);
-    if (user && user.email_verified_at === null) {
-      const verificationToken = await createEmailVerificationToken(env, user.id);
-      if (verificationToken) {
-        try {
-          await sendVerificationEmail(env.EMAIL_RELAY, env.EMAIL_RELAY_SECRET, {
-            to: email,
-            verificationUrl: `${env.PUBLIC_ORIGIN}/api/auth/verify?token=${encodeURIComponent(verificationToken)}`,
-          });
-        } catch (error) {
-          console.error(JSON.stringify({ message: 'verification email resend failed', error: error instanceof Error ? error.message : String(error) }));
-        }
-      }
-    }
-    return json({ sent: true, message: 'If that account needs verification, a new email is on the way.' });
-  }
-  const password = String(body.password || '');
   if (password.length < 10 || password.length > 128) throw new HttpError('Password must be 10 to 128 characters.', 400);
   const attemptKey = await loginAttemptKey(request, email), attempt = await loginAttempt(env, attemptKey), now = Date.now();
   if (attempt && attempt.blockedUntil > now) throw new HttpError('Too many attempts. Try again later.', 429);
@@ -348,18 +317,8 @@ async function handleCloudAuth(request: Request, env: WorkerEnv, url: URL): Prom
       throw error;
     }
     await clearUserLoginAttempt(env, attemptKey);
-    const verificationToken = await createEmailVerificationToken(env, account.userId);
-    if (!verificationToken) throw new Error('Email verification token was not created.');
-    try {
-      await sendVerificationEmail(env.EMAIL_RELAY, env.EMAIL_RELAY_SECRET, {
-        to: email,
-        verificationUrl: `${env.PUBLIC_ORIGIN}/api/auth/verify?token=${encodeURIComponent(verificationToken)}`,
-      });
-    } catch (error) {
-      console.error(JSON.stringify({ message: 'verification email delivery failed', error: error instanceof Error ? error.message : String(error) }));
-      return json({ error: 'Your account was created, but the verification email could not be delivered. Use Resend verification to try again.', code: 'verification_delivery_failed', verificationRequired: true, email }, 503);
-    }
-    return json({ authenticated: false, verificationRequired: true, email }, 202);
+    const token = await createUserSession(env, account.userId);
+    return json({ authenticated: true, email, workspace: await workspaceForUser(env, account.userId) }, 201, { 'set-cookie': setUserSessionCookie(token) });
   }
 
   if (url.pathname === '/api/auth/login') {
@@ -370,9 +329,6 @@ async function handleCloudAuth(request: Request, env: WorkerEnv, url: URL): Prom
     if (!user || !valid) {
       await recordUserLoginFailure(env, attemptKey, attempt);
       throw new HttpError('Email or password is incorrect.', 401);
-    }
-    if (user.email_verified_at === null) {
-      return json({ error: 'Verify your email before signing in.', code: 'email_unverified', verificationRequired: true, email }, 403);
     }
     await clearUserLoginAttempt(env, attemptKey);
     const token = await createUserSession(env, user.id);
@@ -601,7 +557,7 @@ async function handleBilling(request: Request, env: WorkerEnv, url: URL): Promis
 }
 
 async function api(request: Request, env: WorkerEnv, ctx: ExecutionContext, url: URL): Promise<Response | null> {
-  if (url.pathname === '/api/health' && request.method === 'GET') return json({ ok: true, environment: env.ENVIRONMENT, emailConfigured: Boolean(env.EMAIL_RELAY && env.EMAIL_RELAY_SECRET), gmailConfigured: configuredForGmail(env), bouncieConfigured: configuredForBouncie(env), stripeConfigured: stripeConfigured(env) });
+  if (url.pathname === '/api/health' && request.method === 'GET') return json({ ok: true, environment: env.ENVIRONMENT, gmailConfigured: configuredForGmail(env), bouncieConfigured: configuredForBouncie(env), stripeConfigured: stripeConfigured(env) });
   return await handleCloudAuth(request, env, url)
     || await handleCloudWorkspace(request, env, url)
     || await handleCloudAccount(request, env, url)

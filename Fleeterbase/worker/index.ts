@@ -321,7 +321,7 @@ async function handleCloudAuth(request: Request, env: WorkerEnv, url: URL): Prom
       const verificationToken = await createEmailVerificationToken(env, user.id);
       if (verificationToken) {
         try {
-          await sendVerificationEmail(env.EMAIL_RELAY, env.EMAIL_RELAY_SECRET, {
+          await sendVerificationEmail(env.EMAIL_RELAY, env.FLEETERBASE_EMAIL_RELAY_SECRET, {
             to: email,
             verificationUrl: `${env.PUBLIC_ORIGIN}/api/auth/verify?token=${encodeURIComponent(verificationToken)}`,
           });
@@ -351,7 +351,7 @@ async function handleCloudAuth(request: Request, env: WorkerEnv, url: URL): Prom
     const verificationToken = await createEmailVerificationToken(env, account.userId);
     if (!verificationToken) throw new Error('Email verification token was not created.');
     try {
-      await sendVerificationEmail(env.EMAIL_RELAY, env.EMAIL_RELAY_SECRET, {
+      await sendVerificationEmail(env.EMAIL_RELAY, env.FLEETERBASE_EMAIL_RELAY_SECRET, {
         to: email,
         verificationUrl: `${env.PUBLIC_ORIGIN}/api/auth/verify?token=${encodeURIComponent(verificationToken)}`,
       });
@@ -601,7 +601,7 @@ async function handleBilling(request: Request, env: WorkerEnv, url: URL): Promis
 }
 
 async function api(request: Request, env: WorkerEnv, ctx: ExecutionContext, url: URL): Promise<Response | null> {
-  if (url.pathname === '/api/health' && request.method === 'GET') return json({ ok: true, environment: env.ENVIRONMENT, emailConfigured: Boolean(env.EMAIL_RELAY && env.EMAIL_RELAY_SECRET), gmailConfigured: configuredForGmail(env), bouncieConfigured: configuredForBouncie(env), stripeConfigured: stripeConfigured(env) });
+  if (url.pathname === '/api/health' && request.method === 'GET') return json({ ok: true, environment: env.ENVIRONMENT, emailConfigured: Boolean(env.EMAIL_RELAY && env.FLEETERBASE_EMAIL_RELAY_SECRET), gmailConfigured: configuredForGmail(env), bouncieConfigured: configuredForBouncie(env), stripeConfigured: stripeConfigured(env) });
   return await handleCloudAuth(request, env, url)
     || await handleCloudWorkspace(request, env, url)
     || await handleCloudAccount(request, env, url)

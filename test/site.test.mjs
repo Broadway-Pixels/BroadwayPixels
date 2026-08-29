@@ -41,6 +41,7 @@ test("projects page features Fleeterbase before Steady, Autoclicker, and Vidioza
   assert.match(projects, /href="https:\/\/fleeterbase\.com\/"/);
   assert.match(projects, /cloud-synced rental operations workspace for independent hosts/);
   assert.match(projects, /assets\/fleeterbase-preview\.svg/);
+  assert.match(projects, /<h2>Fleeterbase<\/h2>[\s\S]*?<strong>Live now<\/strong>/);
   assert.match(projects, /id="autoclicker"/);
   assert.match(projects, /<h2>Autoclicker<\/h2>/);
   assert.match(projects, /records and replays complete mouse paths, clicks, timing, and repeatable sequences/);

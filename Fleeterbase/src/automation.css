@@ -1,0 +1,13 @@
+.top-icon { position: relative; }
+.notification-count { position: absolute; top: 7px; right: 6px; min-width: 15px; height: 15px; padding: 0 3px; border: 2px solid #fff; border-radius: 10px; color: #fff; background: #cf3737; font-size: 8px; line-height: 11px; text-align: center; }
+.notification-popover { position: absolute; z-index: 60; top: 58px; right: 78px; width: min(340px, calc(100vw - 24px)); padding: 12px; border: 1px solid var(--line); border-radius: 7px; background: #fff; box-shadow: 0 16px 40px #061a3228; }
+.notification-popover h3 { margin: 0 0 9px; font-size: 12px; }
+.notification-popover > p { margin: 0; padding: 15px 5px; color: var(--muted); font-size: 10px; text-align: center; }
+.notification-popover button { display: block; width: 100%; padding: 10px; border: 0; border-top: 1px solid var(--line); background: #fff; text-align: left; }
+.notification-popover button:first-of-type { border-top: 0; }
+.notification-popover b,
+.notification-popover small { display: block; }
+.notification-popover b { font-size: 10px; }
+.notification-popover small { margin-top: 3px; color: var(--muted); font-size: 8px; line-height: 1.4; }
+
+@media (max-width: 480px) { .notification-popover { right: 12px; } }

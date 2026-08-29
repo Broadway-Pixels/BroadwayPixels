@@ -89,7 +89,12 @@ export default function useCloudWorkspace(defaultProfile, defaultPrefs) {
   const register = async (email, password, workspace) => {
     setSyncStatus('Creating cloud workspace…');
     const result = await cloudApi.register(email, password, workspace);
+    if (result.verificationRequired) {
+      setSession(false); setSyncStatus('Verify your email');
+      return result;
+    }
     hydrate(result.workspace); clearLegacyCredentials(); setSession(true); setSyncStatus('Saved to cloud');
+    return result;
   };
 
   const login = async (email, password) => {

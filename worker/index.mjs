@@ -7,7 +7,7 @@ import {
   verifyDashboardCredentials,
   verifyDashboardSession,
 } from "./auth.mjs";
-import { isAllowedOrigin, sendSupportEmails, sendTicketReply, validateSupportSubmission, validateTicketReply } from "../lib/support.mjs";
+import { isAllowedOrigin, sendFleeterbaseVerificationEmail, sendSupportEmails, sendTicketReply, validateSupportSubmission, validateTicketReply } from "../lib/support.mjs";
 import { D1Store, validatePageView } from "./store.mjs";
 
 const ticketIdPattern = /^B\d{10}$/;
@@ -65,6 +65,25 @@ async function rateLimited(store, request, scope, maxAttempts, windowMs) {
 async function dashboardAuthorized(request, env) {
   const token = readDashboardSession(request.headers.get("Cookie") || "");
   return verifyDashboardSession(token, env);
+}
+
+async function secureHeaderMatch(actual, expected) {
+  if (!actual || !expected) return false;
+  const [left, right] = await Promise.all([digest(actual), digest(expected)]);
+  let difference = 0;
+  for (let index = 0; index < left.length; index += 1) difference |= left[index] ^ right[index];
+  return difference === 0;
+}
+
+async function handleFleeterbaseVerification(request, env) {
+  if (request.method !== "POST") return json(405, { message: "Method not allowed." });
+  if (!await secureHeaderMatch(request.headers.get("X-Fleeterbase-Relay-Secret") || "", env.FLEETERBASE_EMAIL_RELAY_SECRET || "")) {
+    return json(404, { message: "Not found." });
+  }
+  let body;
+  try { body = await readJson(request); } catch { return json(400, { message: "Request body must be valid JSON." }); }
+  const result = await sendFleeterbaseVerificationEmail(body, env);
+  return json(result.status, result.ok ? { sent: true, id: result.id } : { message: result.message });
 }
 
 async function handleSupport(request, env, store) {
@@ -206,6 +225,7 @@ async function handleTicketAction(request, env, store, ticketId, action) {
 async function handleRequest(request, env) {
   const url = new URL(request.url);
   const store = new D1Store(env.DB);
+  if (url.pathname === "/api/internal/fleeterbase-verification") return handleFleeterbaseVerification(request, env);
   const ticketAction = url.pathname.match(/^\/api\/dashboard\/tickets\/(B\d{10})(?:\/(reply|archive|unarchive))?$/);
   if (ticketAction) return handleTicketAction(request, env, store, ticketAction[1], ticketAction[2] || "delete");
   if (url.pathname === "/api/support") return handleSupport(request, env, store);

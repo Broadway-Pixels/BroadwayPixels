@@ -1,0 +1,39 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "fleeterbase",
+  "main": "worker/index.ts",
+  "account_id": "74e5863d8bfe799ac2e60352b3a05007",
+  "compatibility_date": "2026-08-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "preview_urls": true,
+  "routes": [
+    { "pattern": "fleeterbase.com", "custom_domain": true },
+    { "pattern": "www.fleeterbase.com", "custom_domain": true }
+  ],
+  "vars": {
+    "ENVIRONMENT": "production",
+    "PUBLIC_ORIGIN": "https://fleeterbase.com",
+    "BOUNCIE_REDIRECT_URI": "https://fleeterbase.com/api/bouncie/callback",
+    "GOOGLE_REDIRECT_URI": "https://fleeterbase.com/api/gmail/callback"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "fleeterbase-production",
+      "database_id": "ed11308d-c782-4ce8-8513-3454a7e570a6",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "head_sampling_rate": 1 },
+    "traces": { "enabled": true, "head_sampling_rate": 0.05 }
+  }
+}

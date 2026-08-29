@@ -8,8 +8,8 @@
   "workers_dev": true,
   "preview_urls": true,
   "routes": [
-    { "pattern": "fleeterbase.com", "custom_domain": true },
-    { "pattern": "www.fleeterbase.com", "custom_domain": true }
+    { "pattern": "fleeterbase.com/*", "zone_name": "fleeterbase.com" },
+    { "pattern": "www.fleeterbase.com/*", "zone_name": "fleeterbase.com" }
   ],
   "vars": {
     "ENVIRONMENT": "production",

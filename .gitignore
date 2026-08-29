@@ -9,3 +9,4 @@ visual-check.mjs
 data/
 dist/
 node_modules/
+/Fleeterbase/

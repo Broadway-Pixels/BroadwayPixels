@@ -3,7 +3,7 @@ import type { LocationPoint, NormalizedWebhook } from '../server/bouncie.mjs';
 
 export type WorkerEnv = Env & {
   EMAIL_RELAY: Fetcher;
-  FLEETERBASE_EMAIL_RELAY_SECRET: string;
+  EMAIL_RELAY_SECRET: string;
   FLEETERBASE_OWNER_EMAIL: string;
   FLEETERBASE_OWNER_PASSWORD: string;
   FLEETERBASE_TOKEN_ENCRYPTION_KEY: string;

@@ -1,6 +1,6 @@
 # Fleeterbase
 
-A local-first rental operations workspace for independent hosts. It includes a public landing page, account onboarding, empty-state dashboard, vehicle and reservation workflows, Turo CSV and Gmail imports, live fleet mapping, route history, pickup navigation, account/profile settings, notification preferences, integration setup states, and workspace export/reset controls.
+A cloud-synced rental operations workspace for independent hosts. It includes a public landing page, secure account onboarding, empty-state dashboard, vehicle and reservation workflows, Turo CSV and Gmail imports, live fleet mapping, route history, pickup navigation, account/profile settings, notification preferences, integration setup states, and workspace export/reset controls.
 
 ## Run
 
@@ -9,9 +9,22 @@ npm install
 npm run dev
 ```
 
-Account, workspace, and manual location history are saved in browser local storage. New accounts begin empty; Fleeterbase does not seed demo vehicles, guests, reservations, or locations.
+Accounts and workspace records are stored in Cloudflare D1 and sync across signed-in devices. Passwords use unique salts and PBKDF2-HMAC-SHA256 with a 600,000-iteration work factor; session tokens are random, stored only as hashes in D1, and delivered in Secure, HttpOnly cookies. Browser storage is retained only as a password-free migration cache. New accounts begin empty unless the browser contains records that the user migrates during signup; Fleeterbase does not seed demo vehicles, guests, reservations, or locations.
 
-Turo CSV import is local. Bouncie has a real server integration: OAuth 2.0 with PKCE, encrypted rotating token storage, authenticated owner controls, webhook verification and deduplication, VIN/IMEI vehicle matching, and 15-second browser sync into the live map. Gmail uses Google OAuth, the read-only Gmail scope, encrypted token storage, Turo-message discovery, a review queue, and duplicate-resistant imports. Tesla and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
+Turo CSV files are parsed in the browser and imported records are saved to the cloud workspace. Bouncie has a real server integration: OAuth 2.0 with PKCE, encrypted rotating token storage, authenticated owner controls, webhook verification and deduplication, VIN/IMEI vehicle matching, and 15-second browser sync into the live map. Gmail uses Google OAuth, the read-only Gmail scope, encrypted token storage, Turo-message discovery, a review queue, and duplicate-resistant imports. Tesla and Stripe remain disconnected until their provider flows are built. See [OBD_RESEARCH.md](./OBD_RESEARCH.md) for the supported-hardware research.
+
+## Cloudflare production
+
+The Worker entry point is `worker/index.ts`, the D1 migrations live in `migrations/`, and `wrangler.jsonc` is the deployment source of truth. Apply migrations before deploying a version that depends on them:
+
+```bash
+npm run cf:types
+npx wrangler d1 migrations apply fleeterbase-production --remote
+npm run cf:build
+npx wrangler deploy
+```
+
+Cloud account endpoints are under `/api/auth/*`; authenticated workspace reads and revision-checked writes use `/api/workspace`. Do not store production passwords, provider credentials, or encryption keys in Wrangler variables or Git.
 
 ## Run the integration-capable server
 

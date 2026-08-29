@@ -38,6 +38,26 @@ import {
   validSession,
   type WorkerEnv,
 } from './store';
+import {
+  USER_SESSION_COOKIE,
+  USER_SESSION_SECONDS,
+  clearUserLoginAttempt,
+  clearUserSession,
+  cloudSession,
+  createCloudAccount,
+  createUserSession,
+  loginAttempt,
+  normalizeEmail,
+  passwordMatches,
+  passwordRecord,
+  recordUserLoginFailure,
+  saveWorkspace,
+  userByEmail,
+  validEmail,
+  validateWorkspace,
+  workspaceForUser,
+  type CloudSession,
+} from './accounts';
 
 const SESSION_COOKIE = 'fleeterbase_owner';
 const SESSION_SECONDS = 12 * 60 * 60;
@@ -72,6 +92,14 @@ function setSessionCookie(token: string): string {
 
 function clearSessionCookie(): string {
   return `${SESSION_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
+}
+
+function setUserSessionCookie(token: string): string {
+  return `${USER_SESSION_COOKIE}=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${USER_SESSION_SECONDS}`;
+}
+
+function clearUserSessionCookie(): string {
+  return `${USER_SESSION_COOKIE}=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`;
 }
 
 function sameOrigin(request: Request): boolean {
@@ -117,6 +145,11 @@ function stateObject(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
 
+async function loginAttemptKey(request: Request, email: string): Promise<string> {
+  const remote = request.headers.get('cf-connecting-ip') || 'unknown';
+  return Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(`${remote}\n${email}`))).toString('hex');
+}
+
 function isTokenSet(value: unknown): value is TokenSet {
   if (!value || typeof value !== 'object') return false;
   const item = value as Partial<TokenSet>;
@@ -151,6 +184,16 @@ async function sessionAuthenticated(request: Request, env: WorkerEnv): Promise<b
 
 async function requireSession(request: Request, env: WorkerEnv): Promise<void> {
   if (!await sessionAuthenticated(request, env)) throw new HttpError('Owner sign-in required.', 401);
+}
+
+async function currentCloudSession(request: Request, env: WorkerEnv): Promise<CloudSession | null> {
+  return cloudSession(env, cookieMap(request).get(USER_SESSION_COOKIE) || '');
+}
+
+async function requireCloudSession(request: Request, env: WorkerEnv): Promise<CloudSession> {
+  const session = await currentCloudSession(request, env);
+  if (!session) throw new HttpError('Sign in to your Fleeterbase workspace.', 401);
+  return session;
 }
 
 async function activeBouncieTokens(env: WorkerEnv): Promise<TokenSet> {
@@ -203,6 +246,73 @@ async function handleSession(request: Request, env: WorkerEnv, url: URL): Promis
   await clearLoginAttempt(env, remote);
   const token = await createSession(env);
   return json({ authenticated: true }, 200, { 'set-cookie': setSessionCookie(token) });
+}
+
+async function handleCloudAuth(request: Request, env: WorkerEnv, url: URL): Promise<Response | null> {
+  if (!url.pathname.startsWith('/api/auth/')) return null;
+  if (url.pathname === '/api/auth/session' && request.method === 'GET') {
+    const session = await currentCloudSession(request, env);
+    if (!session) return json({ authenticated: false });
+    return json({ authenticated: true, email: session.email, workspace: await workspaceForUser(env, session.userId) });
+  }
+  if (!sameOrigin(request)) throw new HttpError('Cross-origin request blocked.', 403);
+  if (url.pathname === '/api/auth/session' && request.method === 'DELETE') {
+    await clearUserSession(env, cookieMap(request).get(USER_SESSION_COOKIE) || '');
+    return json({ authenticated: false }, 200, { 'set-cookie': clearUserSessionCookie() });
+  }
+  if (request.method !== 'POST') throw new HttpError('Method not allowed.', 405);
+  const body = objectValue(await boundedJson(request, url.pathname === '/api/auth/register' ? 850_000 : 20_000));
+  const email = normalizeEmail(body.email), password = String(body.password || '');
+  if (!validEmail(email)) throw new HttpError('Enter a valid email address.', 400);
+  if (password.length < 10 || password.length > 128) throw new HttpError('Password must be 10 to 128 characters.', 400);
+  const attemptKey = await loginAttemptKey(request, email), attempt = await loginAttempt(env, attemptKey), now = Date.now();
+  if (attempt && attempt.blockedUntil > now) throw new HttpError('Too many attempts. Try again later.', 429);
+
+  if (url.pathname === '/api/auth/register') {
+    const workspace = validateWorkspace(body.workspace);
+    if (!workspace) throw new HttpError('Workspace data is invalid or too large.', 400);
+    if (await userByEmail(env, email)) throw new HttpError('An account with this email already exists.', 409);
+    let account;
+    try { account = await createCloudAccount(env, email, password, workspace); }
+    catch (error) {
+      if (error instanceof Error && /UNIQUE constraint failed/i.test(error.message)) throw new HttpError('An account with this email already exists.', 409);
+      throw error;
+    }
+    await clearUserLoginAttempt(env, attemptKey);
+    const token = await createUserSession(env, account.userId);
+    return json({ authenticated: true, email, workspace: await workspaceForUser(env, account.userId) }, 201, { 'set-cookie': setUserSessionCookie(token) });
+  }
+
+  if (url.pathname === '/api/auth/login') {
+    const user = await userByEmail(env, email);
+    const valid = user
+      ? await passwordMatches(password, user.password_hash, user.password_salt, user.password_iterations)
+      : (await passwordRecord(password), false);
+    if (!user || !valid) {
+      await recordUserLoginFailure(env, attemptKey, attempt);
+      throw new HttpError('Email or password is incorrect.', 401);
+    }
+    await clearUserLoginAttempt(env, attemptKey);
+    const token = await createUserSession(env, user.id);
+    return json({ authenticated: true, email, workspace: await workspaceForUser(env, user.id) }, 200, { 'set-cookie': setUserSessionCookie(token) });
+  }
+  throw new HttpError('API route not found.', 404);
+}
+
+async function handleCloudWorkspace(request: Request, env: WorkerEnv, url: URL): Promise<Response | null> {
+  if (url.pathname !== '/api/workspace') return null;
+  const session = await requireCloudSession(request, env);
+  if (request.method === 'GET') return json({ workspace: await workspaceForUser(env, session.userId) });
+  if (request.method !== 'PUT') throw new HttpError('Method not allowed.', 405);
+  if (!sameOrigin(request)) throw new HttpError('Cross-origin request blocked.', 403);
+  const body = objectValue(await boundedJson(request, 850_000)), workspace = validateWorkspace(body.workspace), version = Number(body.version);
+  if (!workspace || !Number.isInteger(version) || version < 1) throw new HttpError('Workspace data or revision is invalid.', 400);
+  const saved = await saveWorkspace(env, session.userId, workspace, version);
+  if (!saved) {
+    const current = await workspaceForUser(env, session.userId);
+    return json({ error: 'Workspace changed on another device.', workspace: current }, 409);
+  }
+  return json({ saved: true, ...saved });
 }
 
 async function handleWebhook(request: Request, env: WorkerEnv, ctx: ExecutionContext, url: URL): Promise<Response | null> {
@@ -327,7 +437,9 @@ async function handleBouncie(request: Request, env: WorkerEnv, url: URL): Promis
 
 async function api(request: Request, env: WorkerEnv, ctx: ExecutionContext, url: URL): Promise<Response | null> {
   if (url.pathname === '/api/health' && request.method === 'GET') return json({ ok: true, environment: env.ENVIRONMENT, gmailConfigured: configuredForGmail(env), bouncieConfigured: configuredForBouncie(env) });
-  return await handleSession(request, env, url)
+  return await handleCloudAuth(request, env, url)
+    || await handleCloudWorkspace(request, env, url)
+    || await handleSession(request, env, url)
     || await handleWebhook(request, env, ctx, url)
     || await handleGmail(request, env, url)
     || await handleBouncie(request, env, url);
@@ -347,7 +459,7 @@ export default {
     const url = new URL(request.url);
     try {
       if (url.hostname === 'www.fleeterbase.com') return new Response(null, { status: 301, headers: { location: `https://fleeterbase.com${url.pathname}${url.search}` } });
-      if (url.protocol !== 'https:') return new Response(null, { status: 301, headers: { location: `https://fleeterbase.com${url.pathname}${url.search}` } });
+      if (url.hostname === 'fleeterbase.com' && url.protocol !== 'https:') return new Response(null, { status: 301, headers: { location: `https://fleeterbase.com${url.pathname}${url.search}` } });
       const response = await api(request, env, ctx, url);
       if (response) return response;
       if (url.pathname.startsWith('/api/')) throw new HttpError('API route not found.', 404);

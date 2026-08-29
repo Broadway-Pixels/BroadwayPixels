@@ -17,8 +17,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "broadway-pixels-production",
-      "database_id": "6c5fb7bc-80d3-439d-8f40-08b750d00b79",
+      "database_name": "broadwaypixels-prod",
+      "database_id": "057326be-b089-47ba-a3f4-fc79bfba276a",
       "migrations_dir": "./migrations"
     }
   ],

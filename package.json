@@ -6,8 +6,8 @@
     "build": "node scripts/build-static.mjs",
     "cf:dev": "npm run build && wrangler dev",
     "cf:deploy": "npm run build && wrangler deploy",
-    "cf:migrate:local": "wrangler d1 migrations apply broadway-pixels-production --local",
-    "cf:migrate:remote": "wrangler d1 migrations apply broadway-pixels-production --remote",
+    "cf:migrate:local": "wrangler d1 migrations apply broadwaypixels-prod --local",
+    "cf:migrate:remote": "wrangler d1 migrations apply broadwaypixels-prod --remote",
     "start": "node server.mjs",
     "test": "node --test"
   },

@@ -39,6 +39,7 @@ test("projects page features Autoclicker after Vidioza and immediately before St
   assert.match(projects, /id="autoclicker"/);
   assert.match(projects, /<h2>Autoclicker<\/h2>/);
   assert.match(projects, /records and replays complete mouse paths, clicks, timing, and repeatable sequences/);
+  assert.doesNotMatch(projects, /Toontown players/);
   assert.match(projects, /assets\/autoclicker-app-icon\.png/);
   const projectOrder = [...projects.matchAll(/<(?:article|a) id="([^"]+)"/g)].map((match) => match[1]);
   assert.deepEqual(projectOrder.slice(0, 3), ["vidioza", "autoclicker", "steady"]);

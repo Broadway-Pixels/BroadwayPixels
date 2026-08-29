@@ -20,8 +20,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "fleeterbase-production",
-      "database_id": "ed11308d-c782-4ce8-8513-3454a7e570a6",
+      "database_name": "fleeterbase-prod",
+      "database_id": "8b9aadc5-e6c3-4feb-80c0-95f5cd3867db",
       "migrations_dir": "migrations"
     }
   ],

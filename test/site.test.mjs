@@ -10,6 +10,15 @@ test("homepage uses the Broadway Pixels creator and developer SEO title", async 
   assert.match(homepage, /property="og:title" content="Broadway Pixels - Content Creator and Developer"/);
 });
 
+test("every public page uses the search-optimized Broadway Pixels favicon", async () => {
+  const pages = await Promise.all(publicPages.map((file) => readFile(new URL(`../${file}`, import.meta.url), "utf8")));
+  pages.forEach((page) => {
+    assert.match(page, /rel="icon" type="image\/png" sizes="48x48" href="\/assets\/broadway-pixels-favicon-48\.png\?v=20260902-1"/);
+    assert.match(page, /rel="shortcut icon" href="\/favicon\.ico\?v=20260902-1"/);
+    assert.match(page, /rel="apple-touch-icon" href="\/assets\/broadway-pixels-favicon\.png/);
+  });
+});
+
 test("every public page loads the early theme and offers a theme control", async () => {
   const pages = await Promise.all(publicPages.map((file) => readFile(new URL(`../${file}`, import.meta.url), "utf8")));
   pages.forEach((page) => {

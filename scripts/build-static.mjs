@@ -5,7 +5,7 @@ const root = new URL("../", import.meta.url);
 const output = new URL("../dist/", import.meta.url);
 const files = [
   "index.html", "music.html", "projects.html", "support.html", "faq.html", "dashboard.html",
-  "privacy.html", "styles.css", "script.js", "theme.js", "support.js", "dashboard.js",
+  "privacy.html", "styles.css", "script.js", "theme.js", "support.js", "dashboard.js", "favicon.ico",
 ];
 
 await rm(output, { recursive: true, force: true });

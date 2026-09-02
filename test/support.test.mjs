@@ -17,8 +17,6 @@ test("validates a complete project support request", () => {
   const result = validateSupportSubmission(validSubmission);
   assert.equal(result.ok, true);
   assert.equal(result.submission.email, "river@example.com");
-  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Autoclicker" }).ok, true);
-  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Steady" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Projects" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Music" }).ok, true);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Content" }).ok, true);
@@ -32,6 +30,8 @@ test("rejects unknown projects and short messages", () => {
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Shop Market Deals" }).ok, false);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "Website" }).ok, false);
   assert.equal(validateSupportSubmission({ ...validSubmission, project: "KixKan" }).ok, false);
+  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Autoclicker" }).ok, false);
+  assert.equal(validateSupportSubmission({ ...validSubmission, project: "Steady" }).ok, false);
   assert.equal(validateSupportSubmission({ ...validSubmission, message: "Too short" }).ok, false);
 });
 

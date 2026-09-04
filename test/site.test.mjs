@@ -93,7 +93,7 @@ test("every public page offers Contact and FAQ under Support", async () => {
 });
 
 test("Tanktopia legal pages disclose optional mobile services and user data routes", async () => {
-  const privacy = await readFile(new URL("../privacy.html", import.meta.url), "utf8");
+  const privacy = await readFile(new URL("../tanktopia-privacy.html", import.meta.url), "utf8");
   const eula = await readFile(new URL("../tanktopia-eula.html", import.meta.url), "utf8");
   for (const page of [privacy, eula]) {
     assert.match(page, /support@broadwaypixels\.com/);

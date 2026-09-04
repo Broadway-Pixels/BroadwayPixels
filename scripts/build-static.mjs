@@ -13,6 +13,7 @@ await mkdir(output, { recursive: true });
 await Promise.all(files.map((file) => copyFile(new URL(file, root), new URL(file, output))));
 await copyFile(new URL("content.html", root), new URL("videos.html", output));
 await mkdir(new URL("tanktopia/", output), { recursive: true });
+await copyFile(new URL("tanktopia-privacy.html", root), new URL("tanktopia/privacy.html", output));
 await copyFile(new URL("tanktopia-eula.html", root), new URL("tanktopia/eula.html", output));
 await mkdir(new URL("steady/", output), { recursive: true });
 await copyFile(new URL("steady-privacy.html", root), new URL("steady/privacy.html", output));

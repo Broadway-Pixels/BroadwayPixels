@@ -36,6 +36,8 @@ const mimeTypes = {
 };
 const publicFiles = new Set(["/index.html", "/music.html", "/content.html", "/projects.html", "/support.html", "/faq.html", "/dashboard.html", "/privacy.html", "/tanktopia-eula.html", "/steady-privacy.html", "/steady-terms.html", "/styles.css", "/script.js", "/theme.js", "/support.js", "/dashboard.js", "/favicon.ico"]);
 
+publicFiles.add("/tanktopia-privacy.html");
+
 function json(response, status, body, headers = {}) {
   response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...headers });
   response.end(JSON.stringify(body));

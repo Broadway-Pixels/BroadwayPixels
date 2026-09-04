@@ -92,18 +92,31 @@ test("every public page offers Contact and FAQ under Support", async () => {
   });
 });
 
-test("Tanktopia legal pages disclose current local behavior and user data routes", async () => {
+test("Tanktopia legal pages disclose optional mobile services and user data routes", async () => {
   const privacy = await readFile(new URL("../privacy.html", import.meta.url), "utf8");
   const eula = await readFile(new URL("../tanktopia-eula.html", import.meta.url), "utf8");
   for (const page of [privacy, eula]) {
-    assert.match(page, /Last updated 2026-08-03/);
     assert.match(page, /support@broadwaypixels\.com/);
     assert.match(page, /local|offline/i);
     assert.match(page, /store (?:availability|approval)/i);
   }
   assert.match(privacy, /Settings &gt; Privacy &amp; Data/);
   assert.match(privacy, /export|delete/i);
-  assert.match(privacy, /does not forward analytics|forwarding is disabled/i);
+  assert.match(privacy, /Last updated 2026-09-04/);
+  assert.match(privacy, /Firebase Authentication/);
+  assert.match(privacy, /Cloud Firestore/);
+  assert.match(privacy, /Sign in with Apple/);
+  assert.match(privacy, /Google AdMob/);
+  assert.match(privacy, /User Messaging Platform/);
+  assert.match(privacy, /Google's non-personalized test ads/);
+  assert.match(privacy, /disables Google's publisher first-party ID/);
+  assert.match(privacy, /does not request Apple's App Tracking Transparency permission/);
+  assert.match(privacy, /Delete Cloud Account/);
+  assert.match(privacy, /id="choices"/);
+  assert.match(privacy, /signing out alone does not delete/);
+  assert.match(privacy, /does not include Firebase Analytics or Crashlytics/);
+  assert.doesNotMatch(privacy, /provider integrations remain unfinished|Conditional production providers/);
+  assert.match(eula, /Last updated 2026-08-03/);
   assert.match(eula, /in-development/i);
 });
 

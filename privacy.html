@@ -35,44 +35,55 @@
       <header class="projects-hero reveal">
         <p class="hero-kicker">Tanktopia</p>
         <h1>Privacy policy</h1>
-        <p>What the current local build does, what may change with production providers, and how to request help with your data.</p>
+        <p>How Tanktopia handles on-device progress, optional cloud saves, rewarded ads, and your privacy choices.</p>
       </header>
 
       <section class="section" aria-labelledby="privacy-overview-title">
         <div class="section-heading">
-          <h2 id="privacy-overview-title">A clear view of the current build</h2>
-          <p>Last updated 2026-08-03. This policy describes Tanktopia as it exists today and will be revised before material production data services are enabled.</p>
+          <h2 id="privacy-overview-title">Your aquarium, your choices</h2>
+          <p>Last updated 2026-09-04. Broadway Pixels, LLC operates Tanktopia. This policy covers the iOS game, including SDK-enabled testing builds. Older builds may provide only local features. It does not represent store approval or store availability.</p>
         </div>
         <div class="principles">
           <article class="principle">
             <span>01</span>
-            <h3>Current local and offline behavior</h3>
-            <p>Tanktopia is an in-development mobile game. The current core gameplay is designed to run locally and offline, without a sign-in requirement. Game progress and settings are saved on the device. The current build uses local or mock service behavior while production credentials and provider integrations remain unfinished.</p>
+            <h3>On-device play</h3>
+            <p>Core aquarium gameplay works locally without an account. Your device stores fish and decoration inventory, currencies, levels, rewards, tasks, gameplay history, preferences, and recovery records. Optional online services need an internet connection. Declining cloud sync does not prevent local play.</p>
           </article>
           <article class="principle">
             <span>02</span>
-            <h3>What is enabled now</h3>
-            <p>Rewarded-ad placements, purchase flows, receipt handling, analytics forwarding, cloud saves, push notifications, and related backend behavior are local, mocked, buffered, optional, or disabled unless their production SDK and configuration are installed. A local support diagnostic can be copied or exported by the player for troubleshooting.</p>
+            <h3>Apple sign-in and cloud saves</h3>
+            <p>If you choose Sign in with Apple, Apple and Google Firebase Authentication process the credentials and account identifiers needed to authenticate you. Tanktopia requests an account identity, not your name or email address, and never receives your Apple password. Firebase also processes network and device information for authentication, security, and service operation.</p>
+            <p>Cloud sync is separately optional. When enabled, your save snapshot and sync timestamps are stored in Cloud Firestore under your Firebase user ID. The snapshot includes gameplay progress, inventory, in-game transactions, reward history, activity counters, and preferences. These records let you restore progress and resolve conflicting device saves; they are not supplied by Tanktopia to advertisers. Authentication and service SDKs may exchange technical metadata even before you enable cloud saving.</p>
           </article>
           <article class="principle">
             <span>03</span>
-            <h3>Conditional production providers</h3>
-            <p>If a future build enables them, providers such as AppLovin MAX, a store and receipt service, Firebase or another analytics service, cloud-save services, or a push provider may process the information needed for those features. That can include purchase receipts, device or user identifiers, gameplay or product events, crash data, performance data, or push tokens. Provider use will depend on the shipped build and its configuration.</p>
+            <h3>Rewarded ads and consent</h3>
+            <p>SDK-enabled builds use Google AdMob for optional rewarded ads and Google's User Messaging Platform for applicable consent and privacy choices. The app checks consent status before initializing or requesting ads. The current beta requests Google's non-personalized test ads, disables Google's publisher first-party ID, and does not request Apple's App Tracking Transparency permission. It does not use paid production ad placements. Test ads still involve communication with Google; they do not mean that no data is processed.</p>
+            <p>Google's advertising SDK may process IP address and approximate location, device or app identifiers, ad impressions and interactions, app interactions, crash information, performance measurements, and other diagnostics for ad delivery, frequency controls, aggregate measurement, security, and service improvement. Tanktopia does not request precise location, contacts, photos, or microphone access for ads.</p>
           </article>
           <article class="principle">
             <span>04</span>
-            <h3>No blanket tracking claim</h3>
-            <p>The current local or mock build does not forward analytics or ad events to production providers unless the corresponding SDK and configuration are enabled. This page does not promise that a future provider-backed build will be identical. Any enabled tracking or other material data use should be disclosed in the app and in an updated policy before that change.</p>
+            <h3>Diagnostics, support, and purchases</h3>
+            <p>The current integration does not include Firebase Analytics or Crashlytics. Tanktopia's gameplay analytics buffer is local; this is separate from AdMob's own measurement and diagnostics. Activity counters included in an optional cloud save are stored to restore your game, not sent to a separate gameplay analytics service.</p>
+            <p>If you contact support, we receive your email address, message, and any diagnostic report, screenshot, or save file you choose to send. We use these to respond and investigate problems. Do not send passwords, payment-card details, or unrelated personal information. Test purchase records may form part of your game save. This update does not enable a new payment or receipt-validation service.</p>
           </article>
-          <article class="principle">
+          <article class="principle" id="choices">
             <span>05</span>
-            <h3>Your export and delete route</h3>
-            <p>In Tanktopia, open <strong>Settings &gt; Privacy &amp; Data</strong> to use the available local export and delete tools. If a production build has provider-backed data that cannot be removed from the device, email <a class="text-link" href="mailto:support@broadwaypixels.com">support@broadwaypixels.com</a> to request access or deletion. Include the request, platform, and any relevant player or purchase reference, but do not send passwords or payment details.</p>
+            <h3>Privacy choices and deletion</h3>
+            <p>Use <strong>Settings &gt; Privacy &amp; Data</strong> for available local export and delete tools. In the <strong>Cloud Save</strong> controls, you can turn sync off or choose <strong>Delete Cloud Account</strong>. Deleting the cloud account requires Apple reauthentication and removes the cloud save and Firebase account; it keeps your current local progress. Turning sync off or signing out alone does not delete the cloud copy. Delete local progress separately if you want both removed.</p>
+            <p>Use the in-app ad privacy options when available to revisit Google's consent choices. You may decline a rewarded ad. This beta does not ask for iOS tracking permission; a future tracking-enabled release would require separate configuration, disclosure, and any applicable platform permission. Contact <a class="text-link" href="mailto:support@broadwaypixels.com">support@broadwaypixels.com</a> for access, correction, export, deletion, or help exercising applicable privacy rights. We may need to verify that a request concerns your account.</p>
           </article>
           <article class="principle">
             <span>06</span>
-            <h3>Contact and updates</h3>
-            <p>For privacy questions or support, contact <a class="text-link" href="mailto:support@broadwaypixels.com">support@broadwaypixels.com</a> or use the <a class="text-link" href="/support">Broadway Pixels support page</a>. Production providers, retention, and data practices may change as Tanktopia moves beyond its current local and offline stage. This page does not represent store approval or store availability.</p>
+            <h3>Sharing, storage, and retention</h3>
+            <p>Apple provides sign-in, Google provides authentication, cloud storage, consent and ads, and our support providers help deliver and respond to messages. We do not sell your cloud save or give its gameplay contents to ad networks. Advertising-related sharing is described above and remains subject to your applicable choices.</p>
+            <p>Cloud saves remain until replaced or deleted; local saves remain until removed from the device. Account deletion removes live cloud records, but provider backups and security logs can persist for their retention periods. Google states that Firebase Authentication IP logs are retained for a few weeks and deleted authentication data is removed from live and backup systems within 180 days. Support information is retained as needed to resolve requests and meet security or legal obligations; contact us to request deletion.</p>
+            <p>Tanktopia's Firestore database is hosted in the United States. Providers may process other service data internationally. We use authenticated, account-scoped cloud access and provider transport protections, but no system can promise absolute security. See <a class="text-link" href="https://firebase.google.com/support/privacy">Firebase privacy information</a>, <a class="text-link" href="https://policies.google.com/privacy">Google's privacy policy</a>, and <a class="text-link" href="https://www.apple.com/legal/privacy/">Apple's privacy policy</a> for their practices.</p>
+          </article>
+          <article class="principle">
+            <span>07</span>
+            <h3>Questions and updates</h3>
+            <p>Parents or guardians with concerns about a child's information, and anyone with a privacy question, can contact <a class="text-link" href="mailto:support@broadwaypixels.com">support@broadwaypixels.com</a> or use our <a class="text-link" href="/support">support page</a>. Depending on your location, additional rights may include objecting to or restricting processing and contacting your privacy regulator. We will update this page when data practices materially change, including before enabling additional production providers.</p>
           </article>
         </div>
       </section>
